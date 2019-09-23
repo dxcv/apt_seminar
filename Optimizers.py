@@ -92,20 +92,20 @@ class Markowitz:
         # Weights, Tangency portfolio asset means and variances, Efficient frontier means and variances
         return W, tan_mean, tan_var, front_mean, front_var  
     
-    def display_assets(self, color='black'):
+    def display_assets(self, color='blue'):
         # draw assets
         plt.scatter([self.C[i, i] ** .5 for i in range(self.n_assets)], self.R, marker='x', color=color)
-        plt.show()
+        #plt.show()
         # for i in range(self.n_assets): 
         #     # draw labels
         #     text(self.C[i, i] ** .5, self.R[i], '  %s' % self.permnos[i], verticalalignment='center', color=color) 
 
-    # def display_frontier(self, label=None, color='black'):
-    #     W, tan_mean, tan_var, front_mean, front_var = self.optimize_frontier()
-    #     text(tan_var ** .5, tan_mean, '   tangent', verticalalignment='center', color=color)
-    #     scatter(tan_var ** .5, tan_mean, marker='o', color=color), grid(True)
-    #     plot(front_var ** .5, front_mean, label=label, color=color), grid(True)  # draw efficient frontier
-
+    def display_frontier(self, label=None, color='blue'):
+        W, tan_mean, tan_var, front_mean, front_var = self.optimize_frontier()
+        #text(tan_var ** .5, tan_mean, '   tangent', verticalalignment='center', color=color)
+        plt.scatter(tan_var ** .5, tan_mean, marker='o', color=color)
+        plt.plot(front_var ** .5, front_mean, label=label, color=color)  # draw efficient frontier
+        plt.show()
     
 class BlackLitterman:
     
