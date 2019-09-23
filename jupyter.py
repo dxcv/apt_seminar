@@ -8,14 +8,14 @@ import scipy as sp
 import scipy.stats as stat
 import matplotlib.pyplot as plt
 
-from ipywidgets import interact, FloatSlider
-
 # My libraries
 from Data import Data
 from Optimizers import Markowitz, BlackLitterman
 
 #%% Load the data 
-data = Data('Returns_short.csv')
+#path = Path('C:\Users\silva\iCloudDrive\Docs\Ausbildung\QuantLibrary\MScQF_Thesis\9. APT Seminar\Returns_Short.csv')
+path = 'C:/Users/silva/iCloudDrive/Docs/Ausbildung/QuantLibrary/MScQF_Thesis/9. APT Seminar/Returns_Short.csv'
+data = Data(path)
 
 #%% Compute for each possible point in time within the data the n largest stocks based on market cap
 data.compute_nlargest(20)
