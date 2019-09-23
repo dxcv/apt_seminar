@@ -74,7 +74,7 @@ class Markowitz:
         n_assets = len(self.R) 
         # start optimization with equal weights
         W = np.ones([n_assets]) / n_assets  
-        # Initialize boundaries for portfolio weights: 0,1
+        # Initialize boundaries for portfolio weights: 0,1 
         b_ = [(0, 1) for i in range(n_assets)] 
         # Sum of weights must be 100%
         c_ = ({'type': 'eq', 'fun': lambda W: sum(W) - 1.})  
@@ -94,10 +94,11 @@ class Markowitz:
     
     def display_assets(self, color='black'):
         # draw assets
-        plt.scatter([self.C[i, i] ** .5 for i in range(self.n_assets)], self.R, marker='x', color=color), grid(True)
-        for i in range(self.n_assets): 
-            # draw labels
-            text(self.C[i, i] ** .5, self.R[i], '  %s' % self.permnos[i], verticalalignment='center', color=color) 
+        plt.scatter([self.C[i, i] ** .5 for i in range(self.n_assets)], self.R, marker='x', color=color)
+        plt.show()
+        # for i in range(self.n_assets): 
+        #     # draw labels
+        #     text(self.C[i, i] ** .5, self.R[i], '  %s' % self.permnos[i], verticalalignment='center', color=color) 
 
     # def display_frontier(self, label=None, color='black'):
     #     W, tan_mean, tan_var, front_mean, front_var = self.optimize_frontier()
