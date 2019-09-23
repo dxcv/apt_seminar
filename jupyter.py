@@ -16,29 +16,29 @@ import optimizers as opt
 #%% Load the data 
 #path = Path('C:\Users\silva\iCloudDrive\Docs\Ausbildung\QuantLibrary\MScQF_Thesis\9. APT Seminar\Returns_Short.csv')
 importlib.reload(data)
-path = 'C:/Users/silva/iCloudDrive/Docs/Ausbildung/QuantLibrary/MScQF_Thesis/9. APT Seminar/Returns_Short.csv'
+path = 'C:/Users/silva/iCloudDrive/Docs/Ausbildung/QuantLibrary/MScQF_Thesis/9. APT Seminar/Returns_final.csv'
 data_set = data.Data(path)
 
 #%%
 data_set.df.head(425)
 
 #%% Compute for each possible point in time within the data the n largest stocks based on market cap
-data.compute_nlargest(20)
+data_set.compute_nlargest(20)
 
 
 
 #%%
 lookback_window = 700
 rf              = -0.0075
-max_length      = len(data.trading_dates)-lookback_window
-dates           = data.trading_dates[-max_length:]
+max_length      = len(data_set.trading_dates)-lookback_window
+dates           = data_set.trading_dates[-max_length:]
 print(dates)
 
 #%%
-returns = data.permnos_returns_caps_weights(date=20181231, lookback_window=lookback_window)[1]
+returns = data_set.permnos_returns_caps_weights(date=20181231, lookback_window=lookback_window)[1]
 
 #%% 
-permnos, market_weights, exp_returns, covars, _ = data.means_historical(date=20181231, lookback_window=500)
+permnos, market_weights, exp_returns, covars, _ = data_set.means_historical(date=20181231, lookback_window=500)
 
 #%%
 importlib.reload(opt)
@@ -48,6 +48,7 @@ bl_pf           = opt.BlackLitterman(rf=rf, permnos=permnos, market_weights=mark
 #%%
 
 for date in dates:
+    
     print(date)
 
 #%%
