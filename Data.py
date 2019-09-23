@@ -7,8 +7,6 @@ class Data:
     # Initializer / Instance Attributes
     def __init__(self, path):
         self.df            = pd.read_csv(path)
-        self.df['CAP']     = self.df.PRC*self.df.SHROUT
-        self.df['RET+1']   = self.df['RET'].shift(-1)
         self.nlargest      = {}
         self.trading_dates = np.sort(self.df.date.unique())
         
@@ -37,18 +35,19 @@ class Data:
         return self.df[(self.df.PERMNO.isin(self.nlargeststocks)) & (self.df.date.isin(self.trading_interval))].reset_index(drop=True)
     
     def permnos_returns_caps_weights(self, date, lookback_window):
-        self.raw = self.get_reduced_data(date=date, lookback_window=lookback_window)[['PERMNO', 'RET']]
+        self.raw = self.get_reduced_data(date=date, lookback_window=lookback_window)[['date','PERMNO', 'RET', 'RET+1']]
         self.permnos = self.raw.PERMNO.unique()
         self.names = self.nlargest[date]['CAP']
-        self.returns, self.caps = [], []
+        self.returns, self.caps, self.returns_ahead = [], [], []
         for name in self.permnos:
             self.returns.append(self.raw.loc[self.raw.PERMNO == name, 'RET'].astype(float))
             self.caps.append(self.names[name])  
+            self.returns_ahead.append(self.raw.loc[(self.raw.PERMNO==name) & (self.raw.date==date), 'RET+1'].astype(float))
         self.market_weights = np.array(self.caps) / sum(self.caps)
-        return self.permnos, self.returns, self.caps, self.market_weights
+        return self.permnos, self.returns, self.caps, self.market_weights, self.returns_ahead
     
     def means_historical(self, date, lookback_window):
-        self.permnos, self.returns, self.caps, self.market_weights = self.permnos_returns_caps_weights(date, lookback_window)
+        self.permnos, self.returns, self.caps, self.market_weights, self.returns_ahead = self.permnos_returns_caps_weights(date, lookback_window)
         self.returns = np.matrix(self.returns)
         self.rows, self.cols = self.returns.shape
         # calculate returns
@@ -60,7 +59,7 @@ class Data:
         self.correls = np.corrcoef(self.returns)
         self.exp_returns = (1 + self.exp_returns) ** 250 - 1  # 3months returns
         self.covars = self.covars * 250  # 3months covariances
-        return self.permnos, self.market_weights, self.exp_returns, self.covars, self.correls
+        return self.permnos, self.market_weights, self.exp_returns, self.covars, self.correls,  self.returns_ahead
     
     def return_summary(self, date, lookback_window):
         self.permnos, self.market_weights, self.exp_returns, self.covars, self.correls = self.means_historical(date, lookback_window)
