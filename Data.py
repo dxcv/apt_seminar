@@ -8,6 +8,7 @@ class Data:
     def __init__(self, path):
         self.df            = pd.read_csv(path)
         self.df['CAP']     = self.df.PRC*self.df.SHROUT
+        self.df['RET+1']   = self.df['RET'].shift(-1)
         self.nlargest      = {}
         self.trading_dates = np.sort(self.df.date.unique())
         
