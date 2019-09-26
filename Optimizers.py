@@ -101,7 +101,7 @@ class Markowitz:
         #     text(self.C[i, i] ** .5, self.R[i], '  %s' % self.permnos[i], verticalalignment='center', color=color) 
 
     def display_frontier(self, label=None, color='blue'):
-        W, tan_mean, tan_var, front_mean, front_var = self.optimize_frontier()
+        _, tan_mean, tan_var, front_mean, front_var = self.optimize_frontier()
         #text(tan_var ** .5, tan_mean, '   tangent', verticalalignment='center', color=color)
         plt.scatter(tan_var ** .5, tan_mean, marker='o', color=color)
         plt.plot(front_var ** .5, front_mean, label=label, color=color)  # draw efficient frontier
@@ -215,7 +215,7 @@ class BlackLitterman:
         #     text(self.C[i, i] ** .5, self.R[i], '  %s' % self.permnos[i], verticalalignment='center', color=color) 
 
     def display_frontier(self, label=None, color='green'):
-        W, tan_mean, tan_var, front_mean, front_var = self.optimize_frontier()
+        _, tan_mean, tan_var, front_mean, front_var = self.optimize_frontier()
         #text(tan_var ** .5, tan_mean, '   tangent', verticalalignment='center', color=color)
         plt.scatter(tan_var ** .5, tan_mean, marker='o', color=color)
         plt.plot(front_var ** .5, front_mean, label=label, color=color)  # draw efficient frontier

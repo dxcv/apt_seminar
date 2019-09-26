@@ -5,7 +5,7 @@ import json
 class Data:
     
     # Initializer / Instance Attributes
-    def __init__(self, path):
+    def __init__(self, df):
         self.df            = pd.read_csv(path)
         self.nlargest      = {}
         self.trading_dates = np.sort(self.df.date.unique())
@@ -42,7 +42,8 @@ class Data:
         for name in self.permnos:
             self.returns.append(self.raw.loc[self.raw.PERMNO == name, 'RET'].astype(float))
             self.caps.append(self.names[name])  
-            self.returns_ahead.append(self.raw.loc[(self.raw.PERMNO==name) & (self.raw.date==date), 'RET+1'].astype(float))
+            intm = float(np.array(self.raw.loc[(self.raw.PERMNO==name) & (self.raw.date==date), 'RET+1'])[0])
+            self.returns_ahead.append(intm)
         self.market_weights = np.array(self.caps) / sum(self.caps)
         return self.permnos, self.returns, self.caps, self.market_weights, self.returns_ahead
     
@@ -56,10 +57,10 @@ class Data:
             self.exp_returns = np.append(self.exp_returns, np.mean(self.returns[r]))
         # calculate covariances
         self.covars = np.cov(self.returns)
-        self.correls = np.corrcoef(self.returns)
-        self.exp_returns = (1 + self.exp_returns) ** 250 - 1  # 3months returns
-        self.covars = self.covars * 250  # 3months covariances
-        return self.permnos, self.market_weights, self.exp_returns, self.covars, self.correls,  self.returns_ahead
+        #self.correls = np.corrcoef(self.returns)
+        #self.exp_returns = (1 + self.exp_returns) ** 250 - 1  # 3months returns
+        #self.covars = self.covars * 250  # 3months covariances
+        return self.permnos, self.market_weights, self.exp_returns, self.covars, self.returns_ahead
     
     def return_summary(self, date, lookback_window):
         self.permnos, self.market_weights, self.exp_returns, self.covars, self.correls = self.means_historical(date, lookback_window)
