@@ -5,7 +5,7 @@ import json
 class Data:
     
     # Initializer / Instance Attributes
-    def __init__(self, df):
+    def __init__(self, path):
         self.df            = pd.read_csv(path)
         self.nlargest      = {}
         self.trading_dates = np.sort(self.df.date.unique())

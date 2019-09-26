@@ -21,12 +21,11 @@ import time
 importlib.reload(datapreprocessing)
 importlib.reload(data)
 path = 'C:/Users/silva/iCloudDrive/Docs/Ausbildung/QuantLibrary/MScQF_Thesis/9. APT Seminar/Returns_final.csv'
-data1 = datapreprocessing.Preprocessing(path)
-data2 = data.Data(path)
+data = datapreprocessing.Preprocessing(path)
+# data2 = data.Data(path)
 
 #%% Compute for each possible point in time within the data the n largest stocks based on market cap
 data.compute_nlargest(20)
-
 
 
 #%%
