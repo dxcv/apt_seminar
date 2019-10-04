@@ -36,13 +36,16 @@ class Preprocessing:
         raw = self.get_reduced_data(date=date, lookback_window=lookback_window)[['date','PERMNO', 'RET', 'RET+1']]
         permnos = raw.PERMNO.unique()
         names = self.nlargest[date]['CAP']
-        returns, caps, returns_ahead = [], [], []
+        returns, caps, returns_ahead, deleted = [], [], [], []
         for name in permnos:
-            returns.append(raw.loc[raw.PERMNO == name, 'RET'].astype(float))
-            caps.append(names[name])  
-            intm = float(np.array(raw.loc[(raw.PERMNO==name) & (raw.date==date), 'RET+1'])[0])
-            returns_ahead.append(intm)
-        market_weights = np.array(caps) / sum(caps)
+            if len(np.array(raw.loc[raw.PERMNO == name, 'RET'].values)) == lookback_window:
+                returns.append(np.array(raw.loc[raw.PERMNO == name, 'RET'].values))
+                caps.append(names[name]) 
+                returns_ahead.append(np.array(raw.loc[(raw.PERMNO==name) & (raw.date==date), 'RET+1'].values))
+                market_weights = np.array(caps) / sum(caps)
+            else:
+                deleted.append(name)
+        permnos = np.delete(permnos, deleted)
         return permnos, returns, caps, market_weights, returns_ahead
     
     def means_historical(self, date, lookback_window):
