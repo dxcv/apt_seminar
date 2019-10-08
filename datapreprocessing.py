@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import json
+from sklearn.covariance import LedoitWolf
 
 class Preprocessing:
     
@@ -55,7 +56,8 @@ class Preprocessing:
         exp_returns = np.array([])
         for r in range(rows):
             exp_returns = np.append(exp_returns, np.mean(returns[r]))
-        covars = np.cov(returns)
+        covars = LedoitWolf().fit(np.transpose(returns)).covariance_
+        #covars = np.cov(returns)
         #correls = np.corrcoef(returns)
         #self.exp_returns = (1 + self.exp_returns) ** 250 - 1  # 3months returns
         #self.covars = self.covars * 250  # 3months covariances

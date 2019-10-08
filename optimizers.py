@@ -6,8 +6,12 @@ import matplotlib.pyplot as plt
 from numpy.linalg import inv, pinv
 import random
 
-class Markowitz:
-    
+class HelperFunctions:
+    """
+    The methods of this class are generally used as input to all optimization techniques presented in this thesis. 
+    That is why i decided to collect them into a parent class for the optimization.
+    """
+
     def __init__(self, rf, permnos, market_weights, exp_returns, covars):
         self.rf = rf
         self.permnos = permnos
@@ -15,7 +19,7 @@ class Markowitz:
         self.R = exp_returns
         self.C = covars
         self.n_assets = len(self.R)
-        
+
     def port_mean(self, W):
         return sum(self.R * W)
 
@@ -26,12 +30,14 @@ class Markowitz:
     def port_mean_var(self, W):
         return self.port_mean(W), self.port_var(W)
 
-    def shapre_ratio(self, W):
+    def sharpe_ratio(self, W):
         mean, var = self.port_mean_var(W)  
         return (mean - self.rf) / np.sqrt(var)  
 
     def inverse_sharpe_ratio(self, W):
-        return 1/self.shapre_ratio(W)
+        return 1/self.sharpe_ratio(W)
+
+class Markowitz(HelperFunctions):
     
     def solve_frontier(self):
         def fitness(W, r):
@@ -91,7 +97,7 @@ class Markowitz:
         for i in range(num_portfolios):
             weights = np.random.random(len(self.R))
             weights /= np.sum(weights)
-            if self.shapre_ratio(W=weights) > sharpe_ratio:
+            if self.sharpe_ratio(W=weights) > sharpe_ratio:
                 portfolio_weights = weights
         return portfolio_weights
                              
