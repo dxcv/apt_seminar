@@ -88,7 +88,7 @@ class Markowitz:
     def solve_weights_mc(self, num_portfolios=100000):
         portfolio_weights = np.zeros(len(self.R))
         sharpe_ratio = 0
-        for i in range(len(num_portfolios)):
+        for i in range(num_portfolios):
             weights = np.random.random(len(self.R))
             weights /= np.sum(weights)
             if self.shapre_ratio(W=weights) > sharpe_ratio:
