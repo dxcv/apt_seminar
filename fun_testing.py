@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import importlib
 import datapreprocessing
 import data
-
+import optimizers as opt
 
 import time
 
@@ -29,8 +29,8 @@ data.compute_nlargest(100)
 lookback_window = 600
 rf              = 0.00
 date            = 20181231
+importlib.reload(opt)
 
-import optimizers as opt
 
 
 #%%
@@ -39,5 +39,10 @@ permnos, market_weights, exp_returns, covars, returns_ahead = data.means_histori
 markowitz_pf      = opt.Markowitz(rf=rf, permnos=permnos, market_weights=market_weights, exp_returns=exp_returns, covars=covars)
 markowitz_weights = markowitz_pf.solve_weights()
 mc_weights        = markowitz_pf.solve_weights_mc()
+
+#%%
+plt.plot(mc_weights)
+# plt.plot(markowitz_weights)
+plt.show()
 
 #%%
