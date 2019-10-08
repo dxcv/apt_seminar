@@ -29,20 +29,25 @@ data.compute_nlargest(100)
 lookback_window = 600
 rf              = 0.00
 date            = 20181231
-importlib.reload(opt)
+
 
 
 
 #%%
+importlib.reload(opt)
 permnos, market_weights, exp_returns, covars, returns_ahead = data.means_historical(date=date, lookback_window=lookback_window)
     
 markowitz_pf      = opt.Markowitz(rf=rf, permnos=permnos, market_weights=market_weights, exp_returns=exp_returns, covars=covars)
 markowitz_weights = markowitz_pf.solve_weights()
 mc_weights        = markowitz_pf.solve_weights_mc()
 
+
 #%%
-plt.plot(mc_weights)
-# plt.plot(markowitz_weights)
-plt.show()
+sharpe_markowitz  = markowitz_pf.sharpe_ratio(markowitz_weights)
+sharpe_mc         = markowitz_pf.sharpe_ratio(mc_weights)
+
+#%%
+print(sharpe_mc)
+
 
 #%%

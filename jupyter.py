@@ -18,15 +18,14 @@ import time
 
 #%% Load the data 
 importlib.reload(datapreprocessing)
-# importlib.reload(data)
 path = 'C:/Users/silva/iCloudDrive/Docs/Ausbildung/QuantLibrary/MScQF_Thesis/9. APT Seminar/Returns_final.csv'
 data = datapreprocessing.Preprocessing(path)
 
 #%% Compute for each possible point in time within the data the n largest stocks based on market cap
-data.compute_nlargest(100)
+data.compute_nlargest(20)
 
 #%%
-lookback_window = 600
+lookback_window = 650
 rf              = 0.00
 max_length      = len(data.trading_dates)-lookback_window
 print(max_length)
