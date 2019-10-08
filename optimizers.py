@@ -16,22 +16,24 @@ class Markowitz:
         self.C = covars
         self.n_assets = len(self.R)
         
-    # Calculates portfolio mean return
     def port_mean(self, W):
         return sum(self.R * W)
 
-    # Calculates portfolio variance of returns
     def port_var(self, W):
         # Return W*C*W
         return np.dot(np.dot(W, self.C), W)
         
-    # Combination of the two functions above - mean and variance of returns calculation
     def port_mean_var(self, W):
         return self.port_mean(W), self.port_var(W)
+
+    def shapre_ratio(self, W):
+        mean, var = self.port_mean_var(W)  
+        return (mean - self.rf) / np.sqrt(var)  
+
+    def inverse_sharpe_ratio(self, W):
+        return 1/self.shapre_ratio(W)
     
     def solve_frontier(self):
-    # Given risk-free rate, assets returns and covariances, this function calculates
-    # mean-variance frontier and returns its [x,y] points in two arrays
         def fitness(W, r):
             # For given level of return r, find weights which minimizes portfolio variance.
             mean, var = self.port_mean_var(W)
@@ -82,7 +84,7 @@ class Markowitz:
         if not optimized.success: 
             raise BaseException(optimized.message)
         return optimized.x
-            
+    
     def solve_weights_mc(self, num_portfolios=100000):
         portfolio_weights = np.zeros(len(self.R))
         sharpe_ratio = 0

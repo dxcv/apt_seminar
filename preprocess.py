@@ -7,14 +7,15 @@ path_rf = 'C:/Users/silva/iCloudDrive/Docs/Ausbildung/QuantLibrary/MScQF_Thesis/
 
 
 #%%
-df = pd.read_csv('Returns_short.csv')
+path = 'C:/Users/silva/iCloudDrive/Docs/Ausbildung/QuantLibrary/MScQF_Thesis/9. APT Seminar/Returns_monthly.csv'
+df = pd.read_csv(path)
 df['CAP'] = df.PRC*df.SHROUT
 df['RET+1'] = df['RET'].shift(-1)
 df = df.loc[(df.RET!='C') & (df.RET!='B') & (df['RET+1']!='C') & (df['RET+1']!='B')]
 df = df.dropna(subset=['RET+1', 'CAP'])
-df = df.drop(columns=['RCRDDT', 'SHROUT', 'PERMCO'])
+#df = df.drop(columns=['RCRDDT', 'SHROUT', 'PERMCO'])
 df[['RET', 'RET+1']].astype(float)
-df.to_csv('Returns_final.csv',index=False)
+df.to_csv('Returns_monthly2.csv',index=False)
 
 #%%
 
