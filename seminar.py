@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import datetime
 import logging
+import datapreprocessing2 as dp
 
 #%%
 df = pd.read_excel('Seminar_returns.xlsx')
@@ -15,8 +16,8 @@ logging.basicConfig(filename='example.log',level=logging.DEBUG)
 
 lookback_window     = 24
 rebal_period        = 3
-start_date          = '20190131'
-end_date            = '20190831'
+start_date          = '19790131'
+end_date            = '19800131'
 dates               = df.Datum.unique()
 start_position      = np.where(dates == start_date)[0].item(0)
 end_position        = np.where(dates == end_date)[0].item(0)
@@ -48,7 +49,10 @@ print(rebal_dates)
 #%%
 for date in tdates:
     if date in rebal_dates:
-        df.loc[(df.Datum == date), 'Gold'].values
+        # Create subset of data where there are at least as many values as required by the lookback window
+        # I.e. only consider assets that have at enough past returns for a given date
+        data = df.loc[(df.Datum <= date)][-lookback_window:].dropna(axis='columns')
+        print(np.mean(data))
     else:
         pass
 
@@ -56,5 +60,6 @@ for date in tdates:
 
 
 
-#%% 
-df2 = df.copy().drop(columns=['Liability Proxy 1-3 years', 'Liability Proxy 3-5 years', 'Liability Proxy 5-7 years', 'Liability Proxy 10+ years'])
+
+#%%
+df2 = dp.Preprocessing('Seminar_returns.xlsx')
