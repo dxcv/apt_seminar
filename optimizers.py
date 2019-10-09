@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from numpy.linalg import inv, pinv
 import random
 
-class HelperFunctions:
+class MotherClass:
     """
     The methods of this class are generally used as input to all optimization techniques presented in this thesis. 
     That is why i decided to collect them into a parent class for the optimization.
@@ -37,7 +37,7 @@ class HelperFunctions:
     def inverse_sharpe_ratio(self, W):
         return 1/self.sharpe_ratio(W)
 
-class Markowitz(HelperFunctions):
+class Markowitz(MotherClass):
     
     def solve_frontier(self):
         def fitness(W, r):
