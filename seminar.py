@@ -7,7 +7,7 @@ import datapreprocessing2 as dp
 
 #%%
 df = pd.read_excel('Seminar_returns.xlsx')
-df.Datum = pd.to_datetime(df.Datum).dt.strftime('%Y%m%d')
+df.date = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
 
 
 #%%
@@ -18,12 +18,12 @@ lookback_window     = 24
 rebal_period        = 3
 start_date          = '19790131'
 end_date            = '19800131'
-dates               = df.Datum.unique()
+dates               = df.date.unique()
 start_position      = np.where(dates == start_date)[0].item(0)
 end_position        = np.where(dates == end_date)[0].item(0)
 obs_start           = dates[start_position-lookback_window+1]
-tdates              = df.loc[(df.Datum >= start_date) & (df.Datum <= end_date),'Datum'].values
-odates              = df.loc[(df.Datum >= obs_start) & (df.Datum <= end_date),'Datum'].values
+tdates              = df.loc[(df.date >= start_date) & (df.date <= end_date),'date'].values
+odates              = df.loc[(df.date >= obs_start) & (df.date <= end_date),'date'].values
 horizon             = len(tdates)
 
 
@@ -51,7 +51,7 @@ for date in tdates:
     if date in rebal_dates:
         # Create subset of data where there are at least as many values as required by the lookback window
         # I.e. only consider assets that have at enough past returns for a given date
-        data = df.loc[(df.Datum <= date)][-lookback_window:].dropna(axis='columns')
+        data = df.loc[(df.date <= date)][-lookback_window:].dropna(axis='columns')
         print(np.mean(data))
     else:
         pass
