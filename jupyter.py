@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 
 import importlib
 import datapreprocessing
-import data
 import optimizers as opt
 
 import time
@@ -19,13 +18,13 @@ import time
 #%% Load the data 
 importlib.reload(datapreprocessing)
 path = 'C:/Users/silva/iCloudDrive/Docs/Ausbildung/QuantLibrary/MScQF_Thesis/9. APT Seminar/Returns_final.csv'
-data = datapreprocessing.Preprocessing(path)
+data = datapreprocessing.Preprocessing('Returns_monthly2.csv')
 
 #%% Compute for each possible point in time within the data the n largest stocks based on market cap
-data.compute_nlargest(20)
+data.compute_nlargest(50)
 
 #%%
-lookback_window = 650
+lookback_window = 48
 rf              = 0.00
 max_length      = len(data.trading_dates)-lookback_window
 print(max_length)
@@ -41,23 +40,28 @@ markowitz_returns   = np.array([])
 market_returns      = np.array([])
 ew_returns          = np.array([])
 
-start_time = time.time()
+start_time1 = time.time()
 
 for date in dates:
+    
+    start_time2 = time.time()
     permnos, market_weights, exp_returns, covars, returns_ahead = data.means_historical(date=date, lookback_window=lookback_window)
+    print("--- %s seconds (DATA TIME PER LOOP) ---" % (time.time() - start_time2))
     
     markowitz_pf      = opt.Markowitz(rf=rf, permnos=permnos, market_weights=market_weights, exp_returns=exp_returns, covars=covars)
     
-    n_assets          = len(market_weights)
-
+    start_time3 = time.time()
     markowitz_weights = markowitz_pf.solve_weights()
+    print("--- %s seconds (OPT TIME PER LOOP) ---" % (time.time() - start_time3))
+    
+    n_assets          = len(market_weights)
     equal_weights     = np.ones([n_assets]) / n_assets 
 
     markowitz_returns = np.append(markowitz_returns, np.array(markowitz_weights).dot(np.array(returns_ahead)))
     market_returns    = np.append(market_returns, np.array(market_weights).dot(np.array(returns_ahead)))
     ew_returns        = np.append(ew_returns, np.array(equal_weights).dot(np.array(returns_ahead)))
 
-print("--- %s seconds ---" % (time.time() - start_time))
+print("--- %s seconds (ALL) ---" % (time.time() - start_time1))
 
 #%%
 plt.hist(markowitz_returns)
