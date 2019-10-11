@@ -12,12 +12,10 @@ df.date = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
 
 
 #%%
-logging.basicConfig(filename='example.log',level=logging.DEBUG)
-
 lookback_window     = 24
 rebal_period        = 6
-start_date          = '19720131'
-end_date            = '20190831'
+start_date          = '19870131'
+end_date            = '20090831'
 
 dates               = df.date.unique()
 start_position      = np.where(dates == start_date)[0].item(0)
@@ -64,7 +62,6 @@ for date in tdates:
     universe        = df.loc[(df.date == date)]
     returns_t       = np.squeeze(universe[universe.columns[universe.columns.isin(assets)]].values)
     W_t             = (W_t * (1+returns_t)) / np.dot(W_t, 1+returns_t)
-    # ew_returns        = np.append(ew_returns, np.array(equal_weights).dot(np.array(returns_ahead)))
     port_return     = np.append(port_return, W_t.dot(returns_t))
 
 
@@ -73,7 +70,6 @@ import matplotlib.pyplot as plt
 port_value = 1+port_return
 port_value = np.cumprod(port_value, axis=0)
 
-print(port_value)
 plt.plot(port_value)
 
 
