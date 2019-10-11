@@ -5,19 +5,20 @@ import datetime
 import logging
 import datapreprocessing2 as dp
 
+
 #%%
 df = pd.read_excel('Seminar_returns.xlsx')
 df.date = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
 
 
 #%%
-
 logging.basicConfig(filename='example.log',level=logging.DEBUG)
 
 lookback_window     = 24
 rebal_period        = 3
-start_date          = '19790131'
-end_date            = '19800131'
+start_date          = '20060131'
+end_date            = '20101231'
+
 dates               = df.date.unique()
 start_position      = np.where(dates == start_date)[0].item(0)
 end_position        = np.where(dates == end_date)[0].item(0)
@@ -26,15 +27,14 @@ tdates              = df.loc[(df.date >= start_date) & (df.date <= end_date),'da
 odates              = df.loc[(df.date >= obs_start) & (df.date <= end_date),'date'].values
 horizon             = len(tdates)
 
-
 if rebal_period == 1:
     mod = divmod(horizon, rebal_period)[0]
 elif rebal_period > horizon:
     rebal_period = 3
     logging.warning('Rebalancing period exceeds horizon. Value set to 3 months')
-    mod = divmod(horizon, rebal_period)[0]+1
+    mod = divmod(horizon, rebal_period)[0]
 else:
-    mod = divmod(horizon, rebal_period)[0]+1
+    mod = divmod(horizon, rebal_period)[0]
     
 #%%
 counter     = 0
@@ -47,19 +47,45 @@ for i in range(mod):
 print(rebal_dates)
 
 #%%
-for date in tdates:
-    if date in rebal_dates:
-        # Create subset of data where there are at least as many values as required by the lookback window
-        # I.e. only consider assets that have at enough past returns for a given date
-        data = df.loc[(df.date <= date)][-lookback_window:].dropna(axis='columns')
-        print(np.mean(data))
-    else:
-        pass
+port_return = np.array([])
 
+for date in tdates:
+    # Create subset of data where there are at least as many values as required by the lookback window
+    # I.e. only consider assets that have at enough past returns for a given date    
+    if date in rebal_dates:
+        universe    = df.loc[(df.date <= date)][-lookback_window:].dropna(axis='columns')
+        returns     = universe.drop(columns=['date'])
+        assets      = returns.columns
+        returns_t   = np.array(returns.values[-1])
+        returns_p   = rebal_univ[:-1]
+
+        # Strategy
+        W_t         = np.ones([len(assets)]) / len(assets)
+    
+    universe        = df.loc[(df.date == date)]
+    returns         = universe[universe.columns[universe.columns.isin(assets)]].values
+    W_t             = (W_t * (1+ returns_t)) / np.dot(W_t, (1 + returns_t))
+    port_return     = np.append(port_return, np.dot(W_t, (returns_t)))
+
+
+#%%
+
+
+port_value = port_return + 1
+port_value = np.cumprod(port_return, axis=0)
+    
+plt.plot(port_value)
+
+        
+ 
 
 
 
 
 
 #%%
-df2 = dp.Preprocessing('Seminar_returns.xlsx')
+
+a = df[df.columns[df.columns.isin(assets)]]
+# a = a.loc[a.date == date]
+print(a.head())
+#%%

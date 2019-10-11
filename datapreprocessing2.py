@@ -7,7 +7,12 @@ class Preprocessing:
     
     # Initializer / Instance Attributes
     def __init__(self, path):
-        self.df            = pd.read_excel(path)
+        if '.csv' in path:
+            self.df        = pd.read_csv(path)
+        else:
+            self.df        = pd.read_excel(path)
+            self.df.date   = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
+
         self.nlargest      = {}
         self.trading_dates = np.sort(self.df.date.unique())
         
@@ -32,6 +37,8 @@ class Preprocessing:
         trading_interval = self.get_trading_interval(date, lookback_window)
         # Return reduced data file (includies only relevant stocks for the relevant interval)
         return self.df[(self.df.PERMNO.isin(nlargeststocks)) & (self.df.date.isin(trading_interval))].reset_index(drop=True)
+
+    
     
     def permnos_returns_caps_weights(self, date, lookback_window):
         raw = self.get_reduced_data(date=date, lookback_window=lookback_window)[['date','PERMNO', 'RET', 'RET+1']]
