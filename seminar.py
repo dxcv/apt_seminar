@@ -77,6 +77,6 @@ port_value = np.cumprod(port_value, axis=0)
 plt.plot(port_value)
 
 #%%
-print(np.squeeze(returns.values))
+print(pd.__version__)
 
 #%%
