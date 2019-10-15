@@ -5,20 +5,22 @@ import scipy.stats as stat
 import matplotlib.pyplot as plt
 from numpy.linalg import inv, pinv
 import random
+from sklearn.covariance import LedoitWolf
 
-class MotherClass:
+class Optimizer:
     """
     The methods of this class are generally used as input to all optimization techniques presented in this thesis. 
     That is why i decided to collect them into a parent class for the optimization.
     """
 
-    def __init__(self, rf, permnos, market_weights, exp_returns, covars):
+    def __init__(self, rf, permnos, returns):
         self.rf = rf
         self.permnos = permnos
-        self.R = exp_returns
-        self.C = covars
-        self.n_assets = len(self.R)
-    
+        self.returns = np.asarray(returns)
+        self.n_assets = len(self.permnos)
+        self.R = np.mean(returns, axis=0)
+        self.C = LedoitWolf().fit(np.transpose(self.returns)).covariance_
+        
     def port_mean(self, W):
         return sum(self.R * W)
 
@@ -36,7 +38,7 @@ class MotherClass:
     def inverse_sharpe_ratio(self, W):
         return 1/self.sharpe_ratio(W)
 
-class Markowitz(MotherClass):
+class Markowitz(Optimizer):
     
     def solve_frontier(self):
         def fitness(W, r):

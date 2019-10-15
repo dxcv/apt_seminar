@@ -4,6 +4,7 @@ import pandas as pd
 import datetime
 import logging
 import datapreprocessing2 as dp
+import optimizers2
 
 
 #%%
@@ -13,9 +14,9 @@ df.date = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
 
 #%%
 lookback_window     = 24
-rebal_period        = 6
+rebal_period        = 12
 start_date          = '19870131'
-end_date            = '20090831'
+end_date            = '19880131'
 
 dates               = df.date.unique()
 start_position      = np.where(dates == start_date)[0].item(0)
@@ -51,11 +52,14 @@ for date in tdates:
     # I.e. only consider assets that have at enough past returns for a given date    
     if date in rebal_dates:
         universe    = df.loc[(df.date <= date)][-lookback_window:].dropna(axis='columns')
-        returns     = universe.drop(columns=['date'])
+        returns     = universe.drop(columns=['date', 'Cash CHF'])
+        rf          = universe['Cash CHF'].drop(columns=['date'])
         assets      = returns.columns
         returns_t   = np.squeeze(returns.values[-1])
         returns_p   = returns[:-1]
-
+        # myopt       = optimizers2.Optimizer(rf=rf, permnos=assets, returns=returns_p)
+        # cov         = myopt.C
+        
         # Strategy
         W_t         = np.ones([len(assets)]) / len(assets)
     
@@ -72,17 +76,7 @@ port_value = np.cumprod(port_value, axis=0)
 
 plt.plot(port_value)
 
-
-        
- 
-
-
-
-
-
 #%%
+print(np.squeeze(returns.values))
 
-a = df[df.columns[df.columns.isin(assets)]]
-# a = a.loc[a.date == date]
-print(a.head())
 #%%
