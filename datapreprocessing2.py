@@ -38,8 +38,6 @@ class Preprocessing:
         # Return reduced data file (includies only relevant stocks for the relevant interval)
         return self.df[(self.df.PERMNO.isin(nlargeststocks)) & (self.df.date.isin(trading_interval))].reset_index(drop=True)
 
-    
-    
     def permnos_returns_caps_weights(self, date, lookback_window):
         raw = self.get_reduced_data(date=date, lookback_window=lookback_window)[['date','PERMNO', 'RET', 'RET+1']]
         permnos = raw.PERMNO.unique()

@@ -11,12 +11,11 @@ import optimizers2
 df = pd.read_excel('Seminar_returns.xlsx')
 df.date = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
 
-
 #%%
-lookback_window     = 24
+lookback_window     = 49
 rebal_period        = 12
 start_date          = '19870131'
-end_date            = '19880131'
+end_date            = '20190131'
 
 dates               = df.date.unique()
 start_position      = np.where(dates == start_date)[0].item(0)
@@ -45,19 +44,23 @@ for i in range(mod):
     counter += rebal_period
 
 #%%
+import importlib
+importlib.reload(optimizers2)
 port_return = np.array([])
 
 for date in tdates:
     # Create subset of data where there are at least as many values as required by the lookback window
     # I.e. only consider assets that have at enough past returns for a given date    
     if date in rebal_dates:
-        universe    = df.loc[(df.date <= date)][-lookback_window:].dropna(axis='columns')
+        universe    = df.loc[(df.date <= date)][-lookback_window:].dropna(axis='columns')      
         returns     = universe.drop(columns=['date', 'Cash CHF'])
-        rf          = universe['Cash CHF'].drop(columns=['date'])
-        assets      = returns.columns
-        returns_t   = np.squeeze(returns.values[-1])
+        rf          = universe['Cash CHF'].drop(columns=['date']).values[-2]
+        returns_t   = returns.values[-1]
         returns_p   = returns[:-1]
-        # myopt       = optimizers2.Optimizer(rf=rf, permnos=assets, returns=returns_p)
+        assets      = returns.columns
+
+        # myopt       = optimizers2.Markowitz(rf=rf, permnos=assets, returns=returns_p, rebal_period=rebal_period)
+        # W_t         = myopt.solve_weights()
         # cov         = myopt.C
         
         # Strategy
@@ -77,6 +80,8 @@ port_value = np.cumprod(port_value, axis=0)
 plt.plot(port_value)
 
 #%%
-print(pd.__version__)
+
+
+
 
 #%%

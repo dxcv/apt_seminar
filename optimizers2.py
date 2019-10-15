@@ -13,13 +13,13 @@ class Optimizer:
     That is why i decided to collect them into a parent class for the optimization.
     """
 
-    def __init__(self, rf, permnos, returns):
+    def __init__(self, rf, permnos, returns, rebal_period):
         self.rf = rf
         self.permnos = permnos
-        self.returns = np.asarray(returns)
+        self.returns = np.matrix(returns)
         self.n_assets = len(self.permnos)
-        self.R = np.mean(returns, axis=0)
-        self.C = LedoitWolf().fit(np.transpose(self.returns)).covariance_
+        self.R = (1+np.mean(returns, axis=0))**rebal_period-1
+        self.C = LedoitWolf().fit(self.returns).covariance_*rebal_period
         
     def port_mean(self, W):
         return sum(self.R * W)
