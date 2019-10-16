@@ -12,9 +12,9 @@ df = pd.read_excel('Seminar_returns.xlsx')
 df.date = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
 
 #%%
-lookback_window     = 49
+lookback_window     = 61
 rebal_period        = 12
-start_date          = '19870131'
+start_date          = '19780131'
 end_date            = '20190131'
 
 dates               = df.date.unique()
@@ -59,12 +59,12 @@ for date in tdates:
         returns_p   = returns[:-1]
         assets      = returns.columns
 
-        # myopt       = optimizers2.Markowitz(rf=rf, permnos=assets, returns=returns_p, rebal_period=rebal_period)
-        # W_t         = myopt.solve_weights()
+        myopt       = optimizers2.Markowitz(rf=rf, permnos=assets, returns=returns_p, rebal_period=rebal_period)
+        W_t         = myopt.solve_weights()
         # cov         = myopt.C
         
         # Strategy
-        W_t         = np.ones([len(assets)]) / len(assets)
+        # W_t         = np.ones([len(assets)]) / len(assets)
     
     universe        = df.loc[(df.date == date)]
     returns_t       = np.squeeze(universe[universe.columns[universe.columns.isin(assets)]].values)
@@ -78,10 +78,39 @@ port_value = 1+port_return
 port_value = np.cumprod(port_value, axis=0)
 
 plt.plot(port_value)
+print(port_value[-1])
+
+# TIME-SERIES FORECASTING
+
+#%%
+from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing, Holt
+import matplotlib.pyplot as plt
 
 #%%
 
+universe    = df.loc[(df.date <= '20190131')][-200:].dropna(axis='columns')
+returns = universe['Bonds CHF'].reset_index(drop=True)
 
 
+#%%
+plt.plot(returns)
 
+#%%
+# Simple Exponential Smoothing
+fit1 = SimpleExpSmoothing(returns).fit(smoothing_level=0.2,optimized=False)
+fcast1 = fit1.forecast(2).rename(r'$\alpha=0.2$')
+
+# plot
+fcast1.plot(color='blue', legend=True)
+fit1.fittedvalues.plot(color='blue')
+
+fit2 = SimpleExpSmoothing(returns).fit(smoothing_level=0.6,optimized=False)
+fcast2 = fit2.forecast(2).rename(r'$\alpha=0.6$')
+# plot
+fcast2.plot(color='red', legend=True)
+fit2.fittedvalues.plot(color='red')
+
+
+plt.plot(returns)
+plt.show()
 #%%

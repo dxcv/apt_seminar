@@ -4,8 +4,9 @@ import scipy as sp
 import scipy.stats as stat
 import matplotlib.pyplot as plt
 from numpy.linalg import inv, pinv
-import random
 from sklearn.covariance import LedoitWolf
+
+
 
 class Optimizer:
     """
@@ -72,13 +73,7 @@ class Markowitz(Optimizer):
     def solve_weights(self):
     # Given risk-free rate, assets returns and covariances, this function calculates
     # weights of tangency portfolio with respect to sharpe ratio maximization
-        def fitness(W):
-            # Calculate mean/variance of the portfolio
-            mean, var = self.port_mean_var(W)  
-            # Utility = Sharpe ratio
-            util = (mean - self.rf) / np.sqrt(var)  
-            # Maximize the utility, minimize its inverse value
-            return 1 / util  
+
         # Number of assets in the portfolio
         n_assets = len(self.R) 
         # start optimization with equal weights
@@ -87,15 +82,18 @@ class Markowitz(Optimizer):
         b_ = [(0, 1) for i in range(n_assets)] 
         # Sum of weights must be 100%
         c_ = ({'type': 'eq', 'fun': lambda W: sum(W) - 1.})  
-        optimized = scipy.optimize.minimize(fitness, W, method='SLSQP', constraints=c_, bounds=b_)
+        optimized = scipy.optimize.minimize(self.inverse_sharpe_ratio, W, method='SLSQP', constraints=c_, bounds=b_)
         if not optimized.success: 
-            raise BaseException(optimized.message)
+            # raise BaseException(optimized.message)
+            # If optimization didn't work a monte carlo simulation steps in
+            return self.solve_weights_mc()
         return optimized.x
     
-    def solve_weights_mc(self, num_portfolios=100000):
+    def solve_weights_mc(self, num_portfolios=10000):
         portfolio_weights = np.zeros(len(self.R))
         sharpe_ratio = 0
         for i in range(num_portfolios):
+            np.random.seed(i)
             weights = np.random.random(len(self.R))
             weights /= np.sum(weights)
             if self.sharpe_ratio(W=weights) > sharpe_ratio:
