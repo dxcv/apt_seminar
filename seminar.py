@@ -12,9 +12,9 @@ df = pd.read_excel('Seminar_returns.xlsx')
 df.date = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
 
 #%%
-lookback_window     = 61
+lookback_window     = 48
 rebal_period        = 12
-start_date          = '19780131'
+start_date          = '19980131'
 end_date            = '20190131'
 
 dates               = df.date.unique()
@@ -46,7 +46,9 @@ for i in range(mod):
 #%%
 import importlib
 importlib.reload(optimizers2)
-port_return = np.array([])
+m_return    = np.array([])
+ev_return   = np.array([])
+
 
 for date in tdates:
     # Create subset of data where there are at least as many values as required by the lookback window
@@ -60,25 +62,29 @@ for date in tdates:
         assets      = returns.columns
 
         myopt       = optimizers2.Markowitz(rf=rf, permnos=assets, returns=returns_p, rebal_period=rebal_period)
-        W_t         = myopt.solve_weights()
-        # cov         = myopt.C
         
-        # Strategy
-        # W_t         = np.ones([len(assets)]) / len(assets)
+        W_m         = myopt.solve_weights()
+        W_ev        = np.ones([len(assets)]) / len(assets)
     
     universe        = df.loc[(df.date == date)]
     returns_t       = np.squeeze(universe[universe.columns[universe.columns.isin(assets)]].values)
-    W_t             = (W_t * (1+returns_t)) / np.dot(W_t, 1+returns_t)
-    port_return     = np.append(port_return, W_t.dot(returns_t))
+    W_m             = (W_m * (1+returns_t)) / np.dot(W_m, 1+returns_t)
+    W_ev            = (W_ev * (1+returns_t)) / np.dot(W_ev, 1+returns_t)
+    m_return        = np.append(m_return, W_m.dot(returns_t))
+    ev_return       = np.append(ev_return, W_ev.dot(returns_t))
 
 
 #%%
 import matplotlib.pyplot as plt
-port_value = 1+port_return
-port_value = np.cumprod(port_value, axis=0)
+m_value     = 1+m_return
+ev_value    = 1+ev_return
 
-plt.plot(port_value)
-print(port_value[-1])
+m_value = np.cumprod(m_value, axis=0)
+ev_value = np.cumprod(ev_value, axis=0)
+
+plt.plot(ev_value)
+plt.plot(m_value)
+
 
 # TIME-SERIES FORECASTING
 
@@ -87,30 +93,42 @@ from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing, Holt
 import matplotlib.pyplot as plt
 
 #%%
+universe = df.loc[(df.date <= '20140530')][-60:].dropna(axis='columns').drop(columns=['date', 'Cash CHF'])
 
-universe    = df.loc[(df.date <= '20190131')][-200:].dropna(axis='columns')
-returns = universe['Bonds CHF'].reset_index(drop=True)
+returns = np.matrix(universe)
+_, cols = np.shape(returns)
+
+for asset in range(cols):
+    returns     = (1 + universe[asset]).reset_index(drop=True).cumprod()
+    model       = Holt(returns, exponential=True).fit(smoothing_level=0.8, smoothing_slope=0.2, optimized=False)
+    pred        = model.forecast(3).values[-1]/returns.values[-1]-1
+
+#%%
+universe    = df.loc[(df.date <= '20140530')][-60:].dropna(axis='columns').drop(columns=['date', 'Cash CHF'])
+
+for asset in universe.columns:
+    returns     = (1 + universe[asset]).reset_index(drop=True).cumprod()
+    train, test = returns.head(57), returns.tail(3)
+    model       = Holt(train, exponential=True).fit(smoothing_level=0.8, smoothing_slope=0.2, optimized=False)
+    pred        = model.forecast(3).values[-1]/train.values[-1]-1
+
+    # print('predicted return:', pred.values[-1]/train.values[-1]-1)
+    # print('realized return:', returns.values[-1]/train.values[-1]-1)
+
 
 
 #%%
-plt.plot(returns)
 
 #%%
-# Simple Exponential Smoothing
-fit1 = SimpleExpSmoothing(returns).fit(smoothing_level=0.2,optimized=False)
-fcast1 = fit1.forecast(2).rename(r'$\alpha=0.2$')
-
-# plot
-fcast1.plot(color='blue', legend=True)
-fit1.fittedvalues.plot(color='blue')
-
-fit2 = SimpleExpSmoothing(returns).fit(smoothing_level=0.6,optimized=False)
-fcast2 = fit2.forecast(2).rename(r'$\alpha=0.6$')
-# plot
-fcast2.plot(color='red', legend=True)
-fit2.fittedvalues.plot(color='red')
 
 
-plt.plot(returns)
-plt.show()
+# plt.plot(train.index, train, label='Train')
+# plt.plot(test.index, test, label='Test')
+# plt.plot(pred.index, pred, label='Holt-Winters')
+# plt.legend(loc='best')
+
+
+
+
+
 #%%

@@ -14,14 +14,22 @@ class Optimizer:
     That is why i decided to collect them into a parent class for the optimization.
     """
 
-    def __init__(self, rf, permnos, returns, rebal_period):
-        self.rf = rf
-        self.permnos = permnos
-        self.returns = np.matrix(returns)
-        self.n_assets = len(self.permnos)
+    def __init__(self, rf, permnos, returns, rebal_period, mean_pred=None):
+        self.rf         = rf
+        self.permnos    = permnos
+        self.returns    = np.matrix(returns)
+        self.n_assets   = len(self.permnos)
         self.R = (1+np.mean(returns, axis=0))**rebal_period-1
-        self.C = LedoitWolf().fit(self.returns).covariance_*rebal_period
-        
+        self.C = LedoitWolf().fit(self.returns).covariance_*rebal_period       
+
+        # if mean_pred=None:
+        #     self.R = (1+np.mean(returns, axis=0))**rebal_period-1
+        # else:
+        #     self.R = []
+        #     _, cols = np.shape(self.returns)
+        #     for i 
+        # self.C = LedoitWolf().fit(self.returns).covariance_*rebal_period
+    
     def port_mean(self, W):
         return sum(self.R * W)
 
@@ -88,6 +96,26 @@ class Markowitz(Optimizer):
             # If optimization didn't work a monte carlo simulation steps in
             return self.solve_weights_mc()
         return optimized.x
+    
+    def solve_weights_ls(self):
+    # Given risk-free rate, assets returns and covariances, this function calculates
+    # weights of tangency portfolio with respect to sharpe ratio maximization
+
+        # Number of assets in the portfolio
+        n_assets = len(self.R) 
+        # start optimization with equal weights
+        W = np.ones([n_assets]) / n_assets  
+        # Initialize boundaries for portfolio weights: 0,1 
+        b_ = [(-1, 2) for i in range(n_assets)] 
+        # Sum of weights must be 100%
+        c_ = ({'type': 'eq', 'fun': lambda W: sum(W) - 1.})  
+        optimized = scipy.optimize.minimize(self.inverse_sharpe_ratio, W, method='SLSQP', constraints=c_, bounds=b_)
+        if not optimized.success: 
+            # raise BaseException(optimized.message)
+            # If optimization didn't work a monte carlo simulation steps in
+            return self.solve_weights_mc()
+        return optimized.x
+    
     
     def solve_weights_mc(self, num_portfolios=10000):
         portfolio_weights = np.zeros(len(self.R))
