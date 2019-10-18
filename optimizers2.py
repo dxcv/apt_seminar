@@ -5,31 +5,38 @@ import scipy.stats as stat
 import matplotlib.pyplot as plt
 from numpy.linalg import inv, pinv
 from sklearn.covariance import LedoitWolf
-
-
+from statsmodels.tsa.api import Holt
+from cvxpy import *
 
 class Optimizer:
     """
-    The methods of this class are generally used as input to all optimization techniques presented in this thesis. 
-    That is why i decided to collect them into a parent class for the optimization.
+    The methods of this class are generally used as input to all optimization techniques presented in this project. 
+    That is why I decided to collect them into a parent class for the optimization.
     """
 
     def __init__(self, rf, permnos, returns, rebal_period, mean_pred=None):
-        self.rf         = rf
-        self.permnos    = permnos
-        self.returns    = np.matrix(returns)
-        self.n_assets   = len(self.permnos)
-        self.R = (1+np.mean(returns, axis=0))**rebal_period-1
-        self.C = LedoitWolf().fit(self.returns).covariance_*rebal_period       
+        self.rf             = rf
+        self.permnos        = permnos
+        self.returns        = returns
+        self.n_assets       = len(self.permnos)
+        self.mean_pred      = mean_pred
+        self.rebal_period   = rebal_period
+        self.R              = self.holt()
+        self.C = LedoitWolf().fit(np.matrix(self.returns)).covariance_*rebal_period
 
-        # if mean_pred=None:
-        #     self.R = (1+np.mean(returns, axis=0))**rebal_period-1
-        # else:
-        #     self.R = []
-        #     _, cols = np.shape(self.returns)
-        #     for i 
-        # self.C = LedoitWolf().fit(self.returns).covariance_*rebal_period
-    
+    def holt(self):
+        if self.mean_pred is None:
+            return (1+np.mean(self.returns, axis=0))**self.rebal_period-1
+        elif self.mean_pred == 'Holt':
+            temp = []
+            _, cols = np.shape(np.matrix(self.returns))
+            for i in range(cols):
+                asset_return    = np.cumprod(1 + np.matrix(self.returns)[:,i].A1)
+                model           = Holt(asset_return, exponential=True).fit(smoothing_level=0.8, smoothing_slope=0.2, optimized=False)
+                pred            = model.forecast(self.rebal_period)[-1]/asset_return[-1]-1
+                temp.append(pred)
+            return np.asarray(temp)
+
     def port_mean(self, W):
         return sum(self.R * W)
 
@@ -92,9 +99,9 @@ class Markowitz(Optimizer):
         c_ = ({'type': 'eq', 'fun': lambda W: sum(W) - 1.})  
         optimized = scipy.optimize.minimize(self.inverse_sharpe_ratio, W, method='SLSQP', constraints=c_, bounds=b_)
         if not optimized.success: 
-            # raise BaseException(optimized.message)
+            raise BaseException(optimized.message)
             # If optimization didn't work a monte carlo simulation steps in
-            return self.solve_weights_mc()
+            # return self.solve_weights_mc()
         return optimized.x
     
     def solve_weights_ls(self):
@@ -117,7 +124,7 @@ class Markowitz(Optimizer):
         return optimized.x
     
     
-    def solve_weights_mc(self, num_portfolios=10000):
+    def solve_weights_mc(self, num_portfolios=100000):
         portfolio_weights = np.zeros(len(self.R))
         sharpe_ratio = 0
         for i in range(num_portfolios):
