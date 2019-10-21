@@ -61,7 +61,7 @@ for date in tdates:
         returns_p   = returns[:-1]
         assets      = returns.columns
 
-        myopt       = optimizers2.Markowitz(rf=rf, permnos=assets, returns=returns_p, rebal_period=rebal_period, mean_pred='Holt')
+        myopt       = optimizers2.MeanVariance(rf=rf, permnos=assets, returns=returns_p, rebal_period=rebal_period, mean_pred='Holt')
 
         W_m         = myopt.solve_tangency_weights()
         W_ev        = np.ones([len(assets)]) / len(assets)
