@@ -51,7 +51,7 @@ for date in dates:
     markowitz_pf      = opt.Markowitz(rf=rf, permnos=permnos, market_weights=market_weights, exp_returns=exp_returns, covars=covars)
     
     start_time3 = time.time()
-    markowitz_weights = markowitz_pf.solve_weights()
+    markowitz_weights = markowitz_pf.solve_tangency_weights()
     print("--- %s seconds (OPT TIME PER LOOP) ---" % (time.time() - start_time3))
     
     n_assets          = len(market_weights)

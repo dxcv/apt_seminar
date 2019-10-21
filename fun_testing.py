@@ -40,6 +40,8 @@ sharpe_ratio(W=W, rf=rf, R=R, C=C)
 
 # Long only portfolio optimization.
 from cvxpy import *
+from scipy.special import logsumexp
+
 w       = Variable(n)
 ret     = R.T*w
 risk    = quad_form(w, C)

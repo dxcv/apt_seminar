@@ -12,10 +12,10 @@ df = pd.read_excel('Seminar_returns.xlsx')
 df.date = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
 
 #%%
-lookback_window     = 48
+lookback_window     = 24
 rebal_period        = 3
-start_date          = '19800131'
-end_date            = '20190131'
+start_date          = '19730131'
+end_date            = '20180131'
 
 dates               = df.date.unique()
 start_position      = np.where(dates == start_date)[0].item(0)
@@ -63,7 +63,7 @@ for date in tdates:
 
         myopt       = optimizers2.Markowitz(rf=rf, permnos=assets, returns=returns_p, rebal_period=rebal_period, mean_pred='Holt')
 
-        W_m         = myopt.solve_weights()
+        W_m         = myopt.solve_tangency_weights()
         W_ev        = np.ones([len(assets)]) / len(assets)
     
     universe        = df.loc[(df.date == date)]
@@ -84,3 +84,9 @@ ev_value = np.cumprod(ev_value, axis=0)
 
 plt.plot(ev_value)
 plt.plot(m_value)
+
+
+#%%
+print(max(m_return))
+
+#%%
