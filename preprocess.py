@@ -8,50 +8,58 @@ path_rf = 'C:/Users/silva/iCloudDrive/Docs/Ausbildung/QuantLibrary/MScQF_Thesis/
 
 #%%
 path = 'C:/Users/silva/iCloudDrive/Docs/Ausbildung/QuantLibrary/MScQF_Thesis/9. APT Seminar/Returns_monthly.csv'
+target = 'C:/Users/silva/iCloudDrive/Docs/Ausbildung/QuantLibrary/MScQF_Thesis/9. APT Seminar/Returns_monthly2.csv'
 df = pd.read_csv(path)
+
+#%%
+from datetime import datetime
+# date = datetime.strptime(str()[0:8], '%Y%m%d')
+df.date = [datetime.strptime(str(x)[0:8], '%Y%m%d') for x in df.date]
+df.date   = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
 df['CAP'] = df.PRC*df.SHROUT
-df['RET+1'] = df['RET'].shift(-1)
-df = df.loc[(df.RET!='C') & (df.RET!='B') & (df['RET+1']!='C') & (df['RET+1']!='B')]
-df = df.dropna(subset=['RET+1', 'CAP'])
-#df = df.drop(columns=['RCRDDT', 'SHROUT', 'PERMCO'])
-df[['RET', 'RET+1']].astype(float)
-df.to_csv('Returns_monthly2.csv',index=False)
+# df['RET+1'] = df['RET'].shift(-1)
+# df = df.loc[(df.RET!='C') & (df.RET!='B') & (df['RET+1']!='C') & (df['RET+1']!='B')]
+df = df.loc[(df.RET!='C') & (df.RET!='B')]
+df = df.dropna(subset=['CAP'])
+df['RET'].astype(float)
+df.to_csv(target,index=False, date_format='%Y%m%d')
 
 #%%
-
-
-
+df2 = pd.read_csv(path, parse_dates=True)
 
 #%%
-sp = pd.read_csv(path_sp)
-rf = pd.read_csv(path_rf)
+df2.date
 
 #%%
-sp = sp[['caldt', 'sprtrn']].dropna()
-rf = rf[['MCALDT', 'TMYTM']].dropna()
+# sp = pd.read_csv(path_sp)
+# rf = pd.read_csv(path_rf)
 
-#%%
-rf = rf.rename(columns={"MCALDT": "date", 'TMYTM': 'rfrtrn'})
-sp = sp.rename(columns={"caldt": "date"})
+# #%%
+# sp = sp[['caldt', 'sprtrn']].dropna()
+# rf = rf[['MCALDT', 'TMYTM']].dropna()
 
-#%%
-rf.rfrtrn = ((rf.rfrtrn/100)+1)**(1/12)-1
+# #%%
+# rf = rf.rename(columns={"MCALDT": "date", 'TMYTM': 'rfrtrn'})
+# sp = sp.rename(columns={"caldt": "date"})
 
-#%%
-rf.date= pd.to_datetime(rf.date)
-rf.date = rf.date.dt.strftime('%Y%m%d')
+# #%%
+# rf.rfrtrn = ((rf.rfrtrn/100)+1)**(1/12)-1
 
-#%%
-rf.date = rf.date.astype(int)
-sp.date = sp.date.astype(int)
+# #%%
+# rf.date= pd.to_datetime(rf.date)
+# rf.date = rf.date.dt.strftime('%Y%m%d')
 
-#%%
-rf.head()
+# #%%
+# rf.date = rf.date.astype(int)
+# sp.date = sp.date.astype(int)
 
-#%%
+# #%%
+# rf.head()
 
-sp.set_index('date', inplace=True)
-rf.set_index('date', inplace=True)
+# #%%
 
-#%%
+# sp.set_index('date', inplace=True)
+# rf.set_index('date', inplace=True)
+
+# #%%
 

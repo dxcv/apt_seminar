@@ -6,6 +6,7 @@ import logging
 import datapreprocessing2 as dp
 import optimizers2
 import matplotlib.pyplot as plt
+import importlib
 
 #%%
 df = pd.read_excel('Seminar_returns.xlsx')
@@ -14,15 +15,14 @@ df.date = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
 #%%
 lookback_window     = 24
 rebal_period        = 3
-start_date          = '19730131'
-end_date            = '20180131'
+start_date          = '20030131'
+end_date            = '20190831'
 
 dates               = df.date.unique()
 start_position      = np.where(dates == start_date)[0].item(0)
 end_position        = np.where(dates == end_date)[0].item(0)
 obs_start           = dates[start_position-lookback_window+1]
 tdates              = df.loc[(df.date >= start_date) & (df.date <= end_date),'date'].values
-odates              = df.loc[(df.date >= obs_start) & (df.date <= end_date),'date'].values
 horizon             = len(tdates)
 
 if rebal_period == 1:
@@ -34,7 +34,6 @@ elif rebal_period > horizon:
 else:
     mod = divmod(horizon, rebal_period)[0]
     
-#%%
 counter     = 0
 rebal_dates = []
 
@@ -44,7 +43,7 @@ for i in range(mod):
     counter += rebal_period
 
 #%%
-import importlib
+
 importlib.reload(optimizers2)
 m_return    = np.array([])
 ev_return   = np.array([])
@@ -87,6 +86,10 @@ plt.plot(m_value)
 
 
 #%%
-print(max(m_return))
+print(np.quantile(ev_return, 0.01))
+
+#%%
+plt.plot(m_return)
+plt.plot(ev_return)
 
 #%%

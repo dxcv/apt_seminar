@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import json
+from datetime import datetime
 from sklearn.covariance import LedoitWolf
 
 class Preprocessing:
@@ -9,10 +10,11 @@ class Preprocessing:
     def __init__(self, path):
         if '.csv' in path:
             self.df        = pd.read_csv(path)
+            # self.df.date   = [datetime.strptime(str(x)[0:8], '%Y%m%d') for x in self.df.date]
+            # self.df.date   = pd.to_datetime(self.df.date).dt.strftime('%Y%m%d')
         else:
             self.df        = pd.read_excel(path)
-            self.df.date   = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
-
+            self.df.date   = pd.to_datetime(self.df.date).dt.strftime('%Y%m%d')
         self.nlargest      = {}
         self.trading_dates = np.sort(self.df.date.unique())
         
@@ -39,20 +41,19 @@ class Preprocessing:
         return self.df[(self.df.PERMNO.isin(nlargeststocks)) & (self.df.date.isin(trading_interval))].reset_index(drop=True)
 
     def permnos_returns_caps_weights(self, date, lookback_window):
-        raw = self.get_reduced_data(date=date, lookback_window=lookback_window)[['date','PERMNO', 'RET', 'RET+1']]
+        raw = self.get_reduced_data(date=date, lookback_window=lookback_window)[['date','PERMNO', 'RET']]
         permnos = raw.PERMNO.unique()
         names = self.nlargest[date]['CAP']
-        returns, caps, returns_ahead, deleted = [], [], [], []
+        returns, caps, deleted = [], [], []
         for name in permnos:
             if len(np.array(raw.loc[raw.PERMNO == name, 'RET'].values)) == lookback_window:
                 returns.append(np.array(raw.loc[raw.PERMNO == name, 'RET'].values))
                 caps.append(names[name]) 
-                returns_ahead.append(np.array(raw.loc[(raw.PERMNO==name) & (raw.date==date), 'RET+1'].values))
                 market_weights = np.array(caps) / sum(caps)
             else:
                 deleted.append(name)
         permnos = np.delete(permnos, deleted)
-        return permnos, returns, caps, market_weights, returns_ahead
+        return permnos, returns, caps, market_weights
     
     def means_historical(self, date, lookback_window):
         permnos, returns, _, market_weights, returns_ahead = self.permnos_returns_caps_weights(date, lookback_window)
