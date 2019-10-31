@@ -10,15 +10,11 @@ import importlib
 
 #%%
 importlib.reload(datapreprocessing2)
-path    = 'C:/Users/silva/iCloudDrive/Docs/Ausbildung/QuantLibrary/MScQF_Thesis/9. APT Seminar/Returns_monthly2.csv'
-data    = datapreprocessing2.Preprocessing(path)
-
-#%% Compute for each possible point in time within the data the n largest stocks based on market cap
+path                = 'C:/Users/silva/iCloudDrive/Docs/Ausbildung/QuantLibrary/MScQF_Thesis/9. APT Seminar/Returns_monthly2.csv'
+data                = datapreprocessing2.Preprocessing(path)
 data.compute_nlargest(10)
-
-#%%
 lookback_window     = 48
-rebal_period        = 3
+rebal_period        = 12
 
 permnos, returns, caps, market_weights = data.permnos_returns_caps_weights(date=20181231, lookback_window=lookback_window)
 
@@ -27,8 +23,6 @@ permnos, returns, caps, market_weights = data.permnos_returns_caps_weights(date=
 importlib.reload(optimizers2)
 myopt = optimizers2.MeanVariance(rf=0, permnos=permnos, returns=returns, rebal_period=rebal_period)
 mybl = optimizers2.BlackLitterman(rf=0,permnos=permnos, returns=returns, rebal_period=rebal_period, market_weights=market_weights)
-# myopt.display_frontier()
-# plt.plot(front_var, front_ret)
 
 
 #%%
@@ -44,14 +38,14 @@ mybl.display_frontier(label='Implied returns', color='red')
 mybl.display_assets(color='red')
 
 plt.xlabel('Risk $\sigma$'), plt.ylabel('Return $\mu$'), plt.legend()
-
+# plt.savefig('toy1.svg')
 
 #%%
 #==================================
 # Mean-variance portfolio
 #==================================
                    
-delta = 3               
+delta = 0.8               
                    
 w                   = np.linalg.solve(delta * myopt.C, myopt.R)
 w_m                 = market_weights
@@ -82,8 +76,6 @@ plt.show()
 
 #%%
 # Calculate portfolio historical return and variance
-
-
 fig, ax = plt.subplots(figsize = (8, 5))
 ax.set_title(r'Difference between $\hat{\mu}$ (historical) and $\mu_{BL}$ (market implied)', fontsize = 12)
 ax.plot(np.arange(n) + 1, myopt.R, 'o', color = 'b', label = '$\hat{\mu}$')
@@ -97,43 +89,46 @@ plt.show()
 
 # pandas.DataFrame({'Impled Returns (BL)': impl_R,'Historical Returns': R}, index=names).T
 
+
+#%%
+
+
+
 #%%
 # With Views P,q and confidence omega and tau
 from numpy import matrix, array, zeros, empty, sqrt, ones, dot, append, mean, cov, transpose, linspace, eye
 from numpy.linalg import inv, pinv
-P = [[1,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,1,0,0,0,0],
-    [0,0,-1,0,0,1,0,0,0,0],
-    [0,0,0,0,0,1,0,-1,0,0],
-    [1,0,0,0,-0.2,0,0.2,0,-1,0]]
-q = [[-0.03],
-     [0.04],
-     [0.02],
-     [0.01],
-     [0.01]]
-omega = [0.1,0.3,0.5,0.7,0.9]*ones(5)
-OMEGA = omega*eye(5)
-tau = 0.3
-mu_combined2    = dot(inv(inv(tau*mybl.C)+dot(dot(np.transpose(P),inv(OMEGA)),P)),(dot(inv(tau*mybl.C),np.transpose([mybl.R]))+dot(dot(np.transpose(P),inv(OMEGA)),q)))
-w_combined2     = dot(inv(3*mybl.C),mu_combined2)
 
-part1           = myopt.R
-part2           = np.dot(tau*myopt.C, np.transpose(P))
-part3           = inv(np.dot(np.dot(np.dot(tau,P), myopt.C), np.transpose(P)) + OMEGA)
-part4           = (np.asarray(q).flatten()-np.dot(P, myopt.R))
-mu_combined     = part1+np.dot(np.dot(part2, part3),part4)
-
-w_combined      = dot(1/3*inv(mybl.C),mu_combined2)
-
-# mu_combined2    = mu_combined2.flatten()
-# w_combined2     = w_combined2.flatten()
-
-# pd.DataFrame({'BL Returns': mu_combined2,'BL Weights': w_combined2}, index=permnos).T
-
-#%%
-print(np.sum(w_combined))
-
-#%%
+importlib.reload(optimizers2)
+myopt = optimizers2.MeanVariance(rf=0, permnos=permnos, returns=returns, rebal_period=rebal_period)
+mybl  = optimizers2.BlackLitterman(rf=0,permnos=permnos, returns=returns, rebal_period=rebal_period, market_weights=market_weights)
+# P = [[1,0,0,0,0,0,0,0,0,0],
+#     [0,0,0,0,0,1,0,0,0,0],
+#     [0,0,-1,0,0,1,0,0,0,0],
+#     [0,0,0,0,0,1,0,-1,0,0],
+#     [1,0,0,0,-0.2,0,0.2,0,-1,0]]
+P = eye(10)
+q = np.expand_dims(myopt.R, axis=1)
+# q = [[-0.03],
+#      [0.04],
+#      [0.02],
+#      [0.01],
+#      [0.01]]
+# omega = [0.1,0.3,0.5,0.7,0.9]*ones(5)
+# OMEGA = omega*eye(5)
+O = np.diag(myopt.C.diagonal())
+tau = 0.05
 
 
-#%%
+mybl.get_model_return(tau=tau, P=P, O=O, q=q)
+
+# %%
+myopt.R
+
+# %%
+mybl.R
+
+# %%
+mybl.mu_c
+
+# %%

@@ -7,6 +7,9 @@ from numpy.linalg           import inv, pinv
 from sklearn.covariance     import LedoitWolf
 from statsmodels.tsa.api    import Holt
 
+from numpy import matrix, array, zeros, empty, sqrt, ones, dot, append, mean, cov, transpose, linspace, eye
+from numpy.linalg import inv, pinv
+
 class MeanVariance:
     """
     The methods of this class are generally used as input to all optimization techniques presented in this project. 
@@ -22,7 +25,6 @@ class MeanVariance:
         self.rebal_period   = rebal_period
         self.R              = self.holt()
         self.C = LedoitWolf().fit(np.matrix(self.returns)).covariance_*rebal_period
-        # self.C              = np.cov(np.asarray(self.returns).T)
 
     def holt(self):
         if self.mean_pred is None:
@@ -58,6 +60,7 @@ class MeanVariance:
         mean, var   = self.port_mean_var(W)
         penalty     = 100*abs(mean - r)  
         return var + penalty
+        
 
     def solve_frontier(self):
         frontier_mean, frontier_var = [], []
@@ -96,9 +99,9 @@ class MeanVariance:
     
     def min_variance(self):
         constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
-        bound = (0.0,1.0)
-        bounds = tuple(bound for asset in range(self.n_assets))
-        result = scipy.optimize.minimize(self.port_var, self.n_assets*[1./self.n_assets,], method='SLSQP', bounds=bounds, constraints=constraints)
+        bound       = (0.0,1.0)
+        bounds      = tuple(bound for asset in range(self.n_assets))
+        result      = scipy.optimize.minimize(self.port_var, self.n_assets*[1./self.n_assets,], method='SLSQP', bounds=bounds, constraints=constraints)
         if not result.success:
             raise BaseException(result.message)
         return result.x
@@ -106,8 +109,8 @@ class MeanVariance:
     def efficient_return(self, target):
         constraints = ({'type': 'eq', 'fun': lambda x: self.port_mean(x) - target},
                     {'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
-        bounds = tuple((0,1) for asset in range(self.n_assets))
-        result = scipy.optimize.minimize(self.port_var, self.n_assets*[1./self.n_assets,], method='SLSQP', bounds=bounds, constraints=constraints)
+        bounds      = tuple((0,1) for asset in range(self.n_assets))
+        result      = scipy.optimize.minimize(self.port_var, self.n_assets*[1./self.n_assets,], method='SLSQP', bounds=bounds, constraints=constraints)
         if not result.success:
             raise BaseException(result.message)
         return result.x
@@ -144,5 +147,56 @@ class BlackLitterman(MeanVariance):
     def __init__(self, rf, permnos, returns, rebal_period, market_weights, mean_pred=None):
         MeanVariance.__init__(self, rf, permnos, returns, rebal_period, mean_pred=None)
         self.market_weights = market_weights
-        self.R              = (1+np.dot(np.dot(3, self.C), self.market_weights)+rf)**rebal_period-1
+        self.R              = (1+np.dot(np.dot(0.8, self.C), self.market_weights)+rf)**rebal_period-1
+        self.mu_c           = self.R
+        
+    # def port_mean_hist(self, W):
+    #     return sum(self.R * W)
+        
+    # def historical_risk_aversion(self):
+    #     return (self.port_mean_hist(self.market_weights) - self.rf)/self.port_var(self.market_weights)
+        
+    # def implied_returns(self): # Calculate equilibrium excess returns and return implied returns
+    #     lmb = self.historical_risk_aversion()
+    #     Pi_m = np.dot(np.dot(lmb, self.C), self.market_weights)
+    #     return Pi_m+self.rf
+    
+    def get_model_return(self, tau, P, O, q):
+        # mu          = self.implied_returns()
+        self.mu_c   = dot(inv(inv(tau*self.C)+dot(dot(transpose(P),inv(O)),P)),(dot(inv(tau*self.C),transpose([self.R]))+dot(dot(transpose(P),inv(O)),q))).flatten()
+        return self.mu_c
 
+    def bl_port_mean(self, W):
+        return sum(self.mu_c * W)
+
+    def efficient_return_bl(self, target):
+        constraints = ({'type': 'eq', 'fun': lambda x: self.bl_port_mean(x) - target},
+                    {'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
+        bounds      = tuple((0,1) for asset in range(self.n_assets))
+        result      = scipy.optimize.minimize(self.port_var, self.n_assets*[1./self.n_assets,], method='SLSQP', bounds=bounds, constraints=constraints)
+        if not result.success:
+            raise BaseException(result.message)
+        return result.x
+
+    def efficient_frontier_bl(self):
+        frontier_ret = []
+        frontier_var = []
+        sharpe_ratio = float("-inf")
+        for r in np.linspace(min(self.mu_c), max(self.mu_c)):  
+            W_opt = self.efficient_return_bl(r)
+            frontier_ret.append(r)
+            frontier_var.append(self.port_var(W_opt))
+            if self.sharpe_ratio(W_opt)>sharpe_ratio:
+                sharpe_ratio             = self.sharpe_ratio(W_opt)
+                W_tan                    = W_opt
+                tan_ret                  = self.bl_port_mean(W_tan)  
+                tan_var                  = self.port_var(W_tan)         
+        return np.array(frontier_ret), np.array(frontier_var), W_tan, np.array(tan_ret), np.array(tan_var)
+
+    def display_assets_bl(self, color='blue'):
+        plt.scatter([self.C[i, i] ** .5 for i in range(self.n_assets)], self.mu_c, marker='x', color=color)
+    
+    def display_frontier_bl(self, label=None, color='blue'):
+        front_mean, front_var, _, tan_mean, tan_var = self.efficient_frontier_bl()
+        plt.scatter(tan_var ** .5, tan_mean, marker='o', color=color)
+        plt.plot(front_var**0.5, front_mean, label=label, color=color)
