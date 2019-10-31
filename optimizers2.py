@@ -62,34 +62,34 @@ class MeanVariance:
         return var + penalty
         
 
-    def solve_frontier(self):
-        frontier_mean, frontier_var = [], []
-        for r in np.linspace(min(self.R), max(self.R), num=20):  
-            W   = np.ones([self.n_assets]) / self.n_assets  
-            b_  = [(0, 1) for i in range(self.n_assets)]
-            c_  = ({'type': 'eq', 'fun': lambda W: sum(W) - 1.})
-            optimized = scipy.optimize.minimize(self.fitness, W, r, method='SLSQP', constraints=c_, bounds=b_)
-            if not optimized.success:
-                raise BaseException(optimized.message)
-            # add point to efficient frontier [x,y] = [optimized.x, r]
-            frontier_mean.append(r)
-            frontier_var.append(self.port_var(optimized.x))
-        return np.array(frontier_mean), np.array(frontier_var)
+    # def solve_frontier(self):
+    #     frontier_mean, frontier_var = [], []
+    #     for r in np.linspace(min(self.R), max(self.R), num=20):  
+    #         W   = np.ones([self.n_assets]) / self.n_assets  
+    #         b_  = [(0, 1) for i in range(self.n_assets)]
+    #         c_  = ({'type': 'eq', 'fun': lambda W: sum(W) - 1.})
+    #         optimized = scipy.optimize.minimize(self.fitness, W, r, method='SLSQP', constraints=c_, bounds=b_)
+    #         if not optimized.success:
+    #             raise BaseException(optimized.message)
+    #         # add point to efficient frontier [x,y] = [optimized.x, r]
+    #         frontier_mean.append(r)
+    #         frontier_var.append(self.port_var(optimized.x))
+    #     return np.array(frontier_mean), np.array(frontier_var)
     
-    def solve_tangency_weights(self):
-        sharpe_ratio = -2
-        # Iterate through the range of returns on Y axis
-        for r in np.linspace(min(self.R), max(self.R)):  
-            W   = np.ones([self.n_assets]) / self.n_assets  
-            b_  = [(0, 1) for i in range(self.n_assets)]
-            c_  = ({'type': 'eq', 'fun': lambda W: sum(W) - 1.})
-            optimized = scipy.optimize.minimize(self.fitness, W, r, method='SLSQP', constraints=c_, bounds=b_)
-            if not optimized.success:
-                raise BaseException(optimized.message)
-            elif self.sharpe_ratio(optimized.x)>sharpe_ratio:
-                sharpe_ratio = self.sharpe_ratio(optimized.x)
-                W = optimized.x
-        return W
+    # def solve_tangency_weights(self):
+    #     sharpe_ratio = -2
+    #     # Iterate through the range of returns on Y axis
+    #     for r in np.linspace(min(self.R), max(self.R)):  
+    #         W   = np.ones([self.n_assets]) / self.n_assets  
+    #         b_  = [(0, 1) for i in range(self.n_assets)]
+    #         c_  = ({'type': 'eq', 'fun': lambda W: sum(W) - 1.})
+    #         optimized = scipy.optimize.minimize(self.fitness, W, r, method='SLSQP', constraints=c_, bounds=b_)
+    #         if not optimized.success:
+    #             raise BaseException(optimized.message)
+    #         elif self.sharpe_ratio(optimized.x)>sharpe_ratio:
+    #             sharpe_ratio = self.sharpe_ratio(optimized.x)
+    #             W = optimized.x
+    #     return W
                              
     def optimize_frontier(self):
         W                       = self.solve_tangency_weights()

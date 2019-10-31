@@ -63,39 +63,53 @@ permnos, returns, caps, market_weights = data.permnos_returns_caps_weights(date=
 # plt.legend(numpoints = 1, loc = 'best', fontsize = 11)
 # plt.show()
 
-#Plot 3
-importlib.reload(optimizers2)
-myopt = optimizers2.MeanVariance(rf=0, permnos=permnos, returns=returns, rebal_period=rebal_period)
-mybl1 = optimizers2.BlackLitterman(rf=0,permnos=permnos, returns=returns, rebal_period=rebal_period, market_weights=market_weights)
-mybl2 = optimizers2.BlackLitterman(rf=0,permnos=permnos, returns=returns, rebal_period=rebal_period, market_weights=market_weights)
+# #Plot 3
+# importlib.reload(optimizers2)
+# myopt = optimizers2.MeanVariance(rf=0, permnos=permnos, returns=returns, rebal_period=rebal_period)
+# mybl1 = optimizers2.BlackLitterman(rf=0,permnos=permnos, returns=returns, rebal_period=rebal_period, market_weights=market_weights)
+# mybl2 = optimizers2.BlackLitterman(rf=0,permnos=permnos, returns=returns, rebal_period=rebal_period, market_weights=market_weights)
 
-# With Views P,q and confidence omega and tau
-from numpy import matrix, array, zeros, empty, sqrt, ones, dot, append, mean, cov, transpose, linspace, eye
-from numpy.linalg import inv, pinv
-P = [[1,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,1,0,0,0,0],
-    [0,0,-1,0,0,1,0,0,0,0],
-    [0,0,0,0,0,1,0,-1,0,0],
-    [1,0,0,0,-0.2,0,0.2,0,-1,0]]
-q = [[-0.03],
-     [0.04],
-     [0.02],
-     [0.01],
-     [0.01]]
-omega = [0.1,0.3,0.5,0.7,0.9]*ones(5)
-OMEGA = omega*eye(5)
-tau = 0.3
+# # With Views P,q and confidence omega and tau
+# from numpy import matrix, array, zeros, empty, sqrt, ones, dot, append, mean, cov, transpose, linspace, eye
+# from numpy.linalg import inv, pinv
+# P = [[1,0,0,0,0,0,0,0,0,0],
+#     [0,0,0,0,0,1,0,0,0,0],
+#     [0,0,-1,0,0,1,0,0,0,0],
+#     [0,0,0,0,0,1,0,-1,0,0],
+#     [1,0,0,0,-0.2,0,0.2,0,-1,0]]
+# q = [[-0.03],
+#      [0.04],
+#      [0.02],
+#      [0.01],
+#      [0.01]]
+# omega = [0.1,0.3,0.5,0.7,0.9]*ones(5)
+# OMEGA = omega*eye(5)
+# tau = 0.3
 
-mybl2.get_model_return(tau=tau, P=P, O=OMEGA, q=q)
+# mybl2.get_model_return(tau=tau, P=P, O=OMEGA, q=q)
 
-mybl1.display_frontier_bl(label='Implied returns', color='red')
-mybl2.display_frontier_bl(label='Combined returns', color='green')
-mybl1.display_assets_bl(color='red')
-mybl2.display_assets_bl(color='green')
-plt.xlabel('Risk $\sigma$')
-plt.ylabel('Return $\mu$')
-plt.legend(loc='upper left')
-plt.title(r'Influence of views and $\tau$='+str(tau).replace('\t', ' '))
-plt.show()
+# mybl1.display_frontier_bl(label='Implied returns', color='red')
+# mybl2.display_frontier_bl(label='Combined returns', color='green')
+# mybl1.display_assets_bl(color='red')
+# mybl2.display_assets_bl(color='green')
+# plt.xlabel('Risk $\sigma$')
+# plt.ylabel('Return $\mu$')
+# plt.legend(loc='upper left')
+# plt.title(r'Influence of views and $\tau$='+str(tau).replace('\t', ' '))
+# plt.show()
 
-#Plot 4
+#Plot 4 (weights 3d plot)
+#%%
+w_SAA = pd.read_excel('Seminar_returns.xlsx', sheet_name='market caps', index_col=False).drop(columns=['Cash CHF']).fillna(0)
+
+
+
+#%%
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+
+#%%
+w_SAA.plot()
+
+#%%

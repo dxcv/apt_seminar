@@ -1,12 +1,10 @@
-import wrds
-import inspect
+#%%
+import pandas as pd
 
+#%%
+df_w = pd.read_excel('Seminar_returns.xlsx', sheet_name='market caps')
 
-all_functions = inspect.getmembers(wrds, inspect.isfunction)
+#%%
+df_w.head()
 
-print(all_functions)
-
-db = wrds.Connection()
-# db.create_pgpass_file()
-
-# #%%
+#%%
