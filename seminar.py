@@ -1,4 +1,4 @@
-#%%
+#%% Load packages
 import numpy as np
 import pandas as pd
 import datetime
@@ -8,7 +8,7 @@ import optimizers2
 import matplotlib.pyplot as plt
 import importlib
 
-#%%
+#%% Load data
 df          = pd.read_excel('Seminar_returns.xlsx', sheet_name='time series')
 df_w        = pd.read_excel('Seminar_returns.xlsx', sheet_name='market caps')
 df.date     = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
@@ -44,16 +44,21 @@ for i in range(mod):
     counter += rebal_period
 
 #%%
-
+# Initialize return arrays
 importlib.reload(optimizers2)
 m_return    = np.array([])
 ev_return   = np.array([])
 saa_return  = np.array([])
 bl_return   = np.array([])
 gmv_return  = np.array([])
-
 rf_return   = np.array([])
 
+# Define parameters for the BL models
+MeanModel1      = 'MLE'
+MeanMOdel2      = 'Holt'
+VarModel1       = 'MLE'
+VarModel2       = 'LW'
+tau         = 0.01
 
 for date in tdates:
     # Create subset of data where there are at least as many values as required by the lookback window
@@ -69,7 +74,7 @@ for date in tdates:
         weights         = (df_w.loc[:, assets].values[0])
       
         # Mean-Variance Optimization        
-        myopt           = optimizers2.MeanVariance(rf=rf, permnos=assets, returns=returns_p.T, rebal_period=rebal_period)
+        myopt           = optimizers2.MeanVariance(rf=0, permnos=assets, returns=returns_p, rebal_period=rebal_period)
         _,_,W_m,_,_     = myopt.efficient_frontier()
 
         # Global minimum variance portfolio
@@ -78,54 +83,59 @@ for date in tdates:
         # 1/N
         W_ev            = np.ones([len(assets)]) / len(assets)
         
-        # Black-Litterman
+        # Black-Litterman HOLT
         W_saa           = weights/(sum(weights))
-        mybl            = optimizers2.BlackLitterman(rf=0,permnos=assets, returns=returns_p.T, rebal_period=rebal_period, market_weights=W_saa)
+        mybl            = optimizers2.BlackLitterman(rf=0, permnos=assets, returns=returns_p, rebal_period=rebal_period, market_weights=W_saa)
+        myview          = optimizers2.MeanVariance(rf=rf, permnos=assets, returns=returns_p, rebal_period=rebal_period, mean_pred='MLE')
         P               = np.eye(len(assets))
-        q               = np.expand_dims(myopt.R, axis=1)
+        q               = np.expand_dims(myview.R, axis=1)
         O               = np.diag(myopt.C.diagonal())
-        tau             = 0.01
-        mybl.get_model_return(tau=tau, P=P, O=O, q=q)
-        _,_,W_bl,_,_     = mybl.efficient_frontier_bl()
+        # mybl.get_model_return(tau=tau, P=P, O=O, q=q)
+        _,_,W_bl,_,_    = mybl.efficient_frontier_bl()
 
     # Update returns and portfolio weights 
     universe        = df.loc[(df.date == date)]
     returns_t       = np.squeeze(universe[universe.columns[universe.columns.isin(assets)]].values)
-
-    W_saa           = (W_saa * (1+returns_t)) / np.dot(W_saa, 1+returns_t)
+    
     W_m             = (W_m * (1+returns_t)) / np.dot(W_m, 1+returns_t)
-    W_ev            = (W_ev * (1+returns_t)) / np.dot(W_ev, 1+returns_t)
-    W_bl            = (W_bl * (1+returns_t)) / np.dot(W_bl, 1+returns_t)
     W_gmv           = (W_gmv * (1+returns_t)) / np.dot(W_gmv, 1+returns_t)
+    W_ev            = (W_ev * (1+returns_t)) / np.dot(W_ev, 1+returns_t)
+    W_saa           = (W_saa * (1+returns_t)) / np.dot(W_saa, 1+returns_t)
+    W_bl            = (W_bl * (1+returns_t)) / np.dot(W_bl, 1+returns_t)
+
 
     m_return        = np.append(m_return, W_m.dot(returns_t))
+    gmv_return      = np.append(gmv_return, W_gmv.dot(returns_t))  
     ev_return       = np.append(ev_return, W_ev.dot(returns_t))
     saa_return      = np.append(saa_return, W_saa.dot(returns_t))
     bl_return       = np.append(bl_return, W_bl.dot(returns_t))  
-    gmv_return      = np.append(gmv_return, W_gmv.dot(returns_t))  
+
 
     rf_return       = np.append(rf_return, rf)
 
 #%%
 m_value     = 1+m_return
+gmv_value   = 1+gmv_return
 ev_value    = 1+ev_return
 saa_value   = 1+saa_return
 bl_value    = 1+bl_return
-gmv_value   = 1+gmv_return
 
 m_value     = np.cumprod(m_value, axis=0)
+gmv_value   = np.cumprod(gmv_value, axis=0)
 ev_value    = np.cumprod(ev_value, axis=0)
 saa_value   = np.cumprod(saa_value, axis=0)
 bl_value    = np.cumprod(bl_value, axis=0)
-gmv_value   = np.cumprod(gmv_value, axis=0)
+
+
+# labels = ['MV', '1/N', 'gMinVar', 'SAA', 'TAA(BL '+Model1+')', 'TAA']
 
 tdates2   = [datetime.datetime.strptime(str(x)[0:8], '%Y%m%d') for x in tdates]
-plt.plot(tdates2, ev_value, label='1/N', color='blue')
 plt.plot(tdates2, m_value, label='MV', color='green')
-plt.plot(tdates2, saa_value, label='SAA', color='red')
-plt.plot(tdates2, bl_value, label='TAA(BL)', color='white')
+plt.plot(tdates2, ev_value, label='1/N', color='blue')
 plt.plot(tdates2, gmv_value, label='gMinVar', color='orange')
-plt.title('Perfor')
+plt.plot(tdates2, saa_value, label='SAA', color='red')
+plt.plot(tdates2, bl_value, label='TAA(BL '+MeanModel1+')', color='white')
+plt.title('Performance Chart')
 plt.legend()
 plt.yscale('log')
 

@@ -16,18 +16,21 @@ class MeanVariance:
     That is why I decided to collect them into a parent class for the optimization.
     """
 
-    def __init__(self, rf, permnos, returns, rebal_period, mean_pred=None):
+    def __init__(self, rf, permnos, returns, rebal_period, mean_pred=None, var_pred='MLE'):
         self.rf             = rf
         self.permnos        = permnos
-        self.returns        = np.asarray(returns).T
+        self.returns        = np.asarray(returns)
         self.n_assets       = len(self.permnos)
         self.mean_pred      = mean_pred
+        self.var_pred       = var_pred
         self.rebal_period   = rebal_period
-        self.R              = self.holt()
-        self.C = LedoitWolf().fit(np.matrix(self.returns)).covariance_*rebal_period
+        self.R              = self.mean_model()
+        self.C              = self.var_model()
 
-    def holt(self):
+    def mean_model(self):
         if self.mean_pred is None:
+            return (1+np.mean(self.returns, axis=0))**self.rebal_period-1
+        elif self.mean_pred == 'MLE':
             return (1+np.mean(self.returns, axis=0))**self.rebal_period-1
         elif self.mean_pred == 'Holt':
             temp = []
@@ -39,11 +42,20 @@ class MeanVariance:
                 temp.append(pred)
             return np.asarray(temp)
 
+    def var_model(self):
+        # Fix problem with transposed returns!
+        var_returns = self.returns
+        if self.var_pred is None:
+            return np.cov(var_returns)*self.rebal_period
+        elif self.var_pred == 'LW':
+            return LedoitWolf().fit(np.matrix(var_returns)).covariance_*self.rebal_period
+        elif self.var_pred == 'MLE':
+            return np.cov(var_returns.T)*self.rebal_period
+
     def port_mean(self, W):
         return sum(self.R * W)
 
     def port_var(self, W):
-        # Return W*C*W
         return np.dot(np.dot(W, self.C), W)
         
     def port_mean_var(self, W):
@@ -60,42 +72,6 @@ class MeanVariance:
         mean, var   = self.port_mean_var(W)
         penalty     = 100*abs(mean - r)  
         return var + penalty
-        
-
-    # def solve_frontier(self):
-    #     frontier_mean, frontier_var = [], []
-    #     for r in np.linspace(min(self.R), max(self.R), num=20):  
-    #         W   = np.ones([self.n_assets]) / self.n_assets  
-    #         b_  = [(0, 1) for i in range(self.n_assets)]
-    #         c_  = ({'type': 'eq', 'fun': lambda W: sum(W) - 1.})
-    #         optimized = scipy.optimize.minimize(self.fitness, W, r, method='SLSQP', constraints=c_, bounds=b_)
-    #         if not optimized.success:
-    #             raise BaseException(optimized.message)
-    #         # add point to efficient frontier [x,y] = [optimized.x, r]
-    #         frontier_mean.append(r)
-    #         frontier_var.append(self.port_var(optimized.x))
-    #     return np.array(frontier_mean), np.array(frontier_var)
-    
-    # def solve_tangency_weights(self):
-    #     sharpe_ratio = -2
-    #     # Iterate through the range of returns on Y axis
-    #     for r in np.linspace(min(self.R), max(self.R)):  
-    #         W   = np.ones([self.n_assets]) / self.n_assets  
-    #         b_  = [(0, 1) for i in range(self.n_assets)]
-    #         c_  = ({'type': 'eq', 'fun': lambda W: sum(W) - 1.})
-    #         optimized = scipy.optimize.minimize(self.fitness, W, r, method='SLSQP', constraints=c_, bounds=b_)
-    #         if not optimized.success:
-    #             raise BaseException(optimized.message)
-    #         elif self.sharpe_ratio(optimized.x)>sharpe_ratio:
-    #             sharpe_ratio = self.sharpe_ratio(optimized.x)
-    #             W = optimized.x
-    #     return W
-                             
-    def optimize_frontier(self):
-        W                       = self.solve_tangency_weights()
-        tan_mean, tan_var       = self.port_mean_var(W)  
-        front_mean, front_var   = self.solve_frontier()  
-        return W, tan_mean, tan_var, front_mean, front_var  
     
     def min_variance(self):
         constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
@@ -126,44 +102,28 @@ class MeanVariance:
             if self.sharpe_ratio(W_opt)>sharpe_ratio:
                 sharpe_ratio             = self.sharpe_ratio(W_opt)
                 W_tan                    = W_opt
-                tan_ret, tan_var         = self.port_mean_var(W_tan)  
-                # print('Vol:', np.sqrt(tan_var), 'SR:', sharpe_ratio)             
+                tan_ret, tan_var         = self.port_mean_var(W_tan)            
         return np.array(frontier_ret), np.array(frontier_var), W_tan, np.array(tan_ret), np.array(tan_var)
 
     def display_assets(self, color='blue'):
         plt.scatter([self.C[i, i] ** .5 for i in range(self.n_assets)], self.R, marker='x', color=color)
-        # for i in range(self.n_assets): 
-        #     plt.text(self.C[i, i] ** .5, self.R[i], '  %s' % self.permnos[i], color=color)
     
     def display_frontier(self, label=None, color='blue'):
-        # _, tan_mean, tan_var, front_mean, front_var = self.optimize_frontier()
         front_mean, front_var, _, tan_mean, tan_var = self.efficient_frontier()
-        # text(tan_var ** .5, tan_mean, '   tangent', verticalalignment='center', color=color)
-        # plt.scatter(tan_var**0.5, tan_mean, marker='o', color=color)
         plt.plot(front_var**0.5, front_mean, label=label, color=color)  # draw efficient frontier
     
 class BlackLitterman(MeanVariance):
 
-    def __init__(self, rf, permnos, returns, rebal_period, market_weights, mean_pred=None):
-        MeanVariance.__init__(self, rf, permnos, returns, rebal_period, mean_pred=None)
+    def __init__(self, rf, permnos, returns, rebal_period, market_weights, mean_pred=None, var_pred='LW'):
+        MeanVariance.__init__(self, rf, permnos, returns, rebal_period, mean_pred=None, var_pred='LW')
         self.market_weights = market_weights
+        # Market implied returns
         self.R              = (1+np.dot(np.dot(0.8, self.C), self.market_weights)+rf)**rebal_period-1
-        self.mu_c           = self.R
-        
-    # def port_mean_hist(self, W):
-    #     return sum(self.R * W)
-        
-    # def historical_risk_aversion(self):
-    #     return (self.port_mean_hist(self.market_weights) - self.rf)/self.port_var(self.market_weights)
-        
-    # def implied_returns(self): # Calculate equilibrium excess returns and return implied returns
-    #     lmb = self.historical_risk_aversion()
-    #     Pi_m = np.dot(np.dot(lmb, self.C), self.market_weights)
-    #     return Pi_m+self.rf
+        # If no views are presented, realize the market portfolio
+        self.mu_c           = self.R        
     
     def get_model_return(self, tau, P, O, q):
-        # mu          = self.implied_returns()
-        self.mu_c   = dot(inv(inv(tau*self.C)+dot(dot(transpose(P),inv(O)),P)),(dot(inv(tau*self.C),transpose([self.R]))+dot(dot(transpose(P),inv(O)),q))).flatten()
+        self.mu_c   = dot(inv(inv(tau*self.C)+dot(dot(transpose(P),inv(O)),P)),(dot(inv(tau*self.C),transpose([self.R.T]))+dot(dot(transpose(P),inv(O)),q))).flatten()
         return self.mu_c
 
     def bl_port_mean(self, W):

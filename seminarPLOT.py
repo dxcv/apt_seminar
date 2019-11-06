@@ -63,30 +63,31 @@ permnos, returns, caps, market_weights = data.permnos_returns_caps_weights(date=
 # plt.legend(numpoints = 1, loc = 'best', fontsize = 11)
 # plt.show()
 
-# #Plot 3
-# importlib.reload(optimizers2)
-# myopt = optimizers2.MeanVariance(rf=0, permnos=permnos, returns=returns, rebal_period=rebal_period)
-# mybl1 = optimizers2.BlackLitterman(rf=0,permnos=permnos, returns=returns, rebal_period=rebal_period, market_weights=market_weights)
-# mybl2 = optimizers2.BlackLitterman(rf=0,permnos=permnos, returns=returns, rebal_period=rebal_period, market_weights=market_weights)
+#Plot 3
+importlib.reload(optimizers2)
+myopt = optimizers2.MeanVariance(rf=0, permnos=permnos, returns=returns, rebal_period=rebal_period)
+mybl1 = optimizers2.BlackLitterman(rf=0,permnos=permnos, returns=returns, rebal_period=rebal_period, market_weights=market_weights)
+mybl2 = optimizers2.BlackLitterman(rf=0,permnos=permnos, returns=returns, rebal_period=rebal_period, market_weights=market_weights)
 
-# # With Views P,q and confidence omega and tau
-# from numpy import matrix, array, zeros, empty, sqrt, ones, dot, append, mean, cov, transpose, linspace, eye
-# from numpy.linalg import inv, pinv
-# P = [[1,0,0,0,0,0,0,0,0,0],
-#     [0,0,0,0,0,1,0,0,0,0],
-#     [0,0,-1,0,0,1,0,0,0,0],
-#     [0,0,0,0,0,1,0,-1,0,0],
-#     [1,0,0,0,-0.2,0,0.2,0,-1,0]]
-# q = [[-0.03],
-#      [0.04],
-#      [0.02],
-#      [0.01],
-#      [0.01]]
-# omega = [0.1,0.3,0.5,0.7,0.9]*ones(5)
-# OMEGA = omega*eye(5)
-# tau = 0.3
+# With Views P,q and confidence omega and tau
+from numpy import matrix, array, zeros, empty, sqrt, ones, dot, append, mean, cov, transpose, linspace, eye
+from numpy.linalg import inv, pinv
+P = [[1,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,1,0,0,0,0],
+    [0,0,-1,0,0,1,0,0,0,0],
+    [0,0,0,0,0,1,0,-1,0,0],
+    [1,0,0,0,-0.2,0,0.2,0,-1,0]]
+q = [[-0.03],
+     [0.04],
+     [0.02],
+     [0.01],
+     [0.01]]
+omega = 0.1
+OMEGA = [omega, omega, omega, omega, omega]*ones(5)
+OMEGA = OMEGA*eye(5)
+tau = 0.1
 
-# mybl2.get_model_return(tau=tau, P=P, O=OMEGA, q=q)
+mybl2.get_model_return(tau=tau, P=P, O=OMEGA, q=q)
 
 # mybl1.display_frontier_bl(label='Implied returns', color='red')
 # mybl2.display_frontier_bl(label='Combined returns', color='green')
@@ -95,21 +96,29 @@ permnos, returns, caps, market_weights = data.permnos_returns_caps_weights(date=
 # plt.xlabel('Risk $\sigma$')
 # plt.ylabel('Return $\mu$')
 # plt.legend(loc='upper left')
-# plt.title(r'Influence of views and $\tau$='+str(tau).replace('\t', ' '))
+# plt.title('Influence of views ($\omega$='+str(omega)+') '+r'and $\tau$='+str(tau).replace('\t', ' '))
 # plt.show()
 
 #Plot 4 (weights 3d plot)
-#%%
-w_SAA = pd.read_excel('Seminar_returns.xlsx', sheet_name='market caps', index_col=False).drop(columns=['Cash CHF']).fillna(0)
+w_m                 = market_weights
+_, _, w_tan, _, _   = mybl2.efficient_frontier_bl()
+n = len(market_weights)
 
 
+fig, ax = plt.subplots(figsize = (8, 5))
+ax.set_title('Influence of views ($\omega$='+str(omega)+') '+r'and $\tau$='+str(tau).replace('\t', ' '), fontsize = 15)
+# ax.plot(np.arange(n) + 1, w, 'o', color = 'b', label = '$w$ (MV)')
+ax.plot(np.arange(n) + 1, w_m, 'o', color = 'r', label = '$w_m$ (Market weights)')
+ax.plot(np.arange(n) + 1, w_tan, 'o', color = 'g', label = '$w_t$ (BL tangency weights)')
+# ax.vlines(np.arange(n) + 1, 0, w, lw = 1)
+# ax.vlines(np.arange(n) + 1, 0, w_m, lw = 1)
+# ax.vlines(np.arange(n) + 1, 0, w_tan, lw = 1)
+ax.axhline(0, color = 'k')
+# ax.axhline(-1, color = 'k', linestyle = '--')
+# ax.axhline(1, color = 'k', linestyle = '--')
+ax.set_xlim([0, n+1])
+ax.set_xlabel('Assets', fontsize = 11)
+ax.xaxis.set_ticks(np.arange(1, n + 1, 1))
+plt.legend(numpoints = 1, loc = 'best', fontsize = 11)
+plt.show()
 
-#%%
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
-
-#%%
-w_SAA.plot()
-
-#%%
