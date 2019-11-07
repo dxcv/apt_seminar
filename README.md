@@ -11,3 +11,4 @@ This is a repository for all the stuff I did during the UZH seminar Applied Port
 > `conda activate apt_sem`
 6. Download all the required modules for this project: 
 > `pip install --user --requirement requirements.txt`
+7. Clone this repository (see step 3): 
