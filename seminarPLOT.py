@@ -122,3 +122,9 @@ ax.xaxis.set_ticks(np.arange(1, n + 1, 1))
 plt.legend(numpoints = 1, loc = 'best', fontsize = 11)
 plt.show()
 
+#%%
+import numpy as np
+uncertainty = 0.5
+np.expand_dims(np.ones(10), axis=1)*uncertainty
+
+# %%

@@ -118,7 +118,7 @@ class BlackLitterman(MeanVariance):
         MeanVariance.__init__(self, rf, permnos, returns, rebal_period, mean_pred=None, var_pred='LW')
         self.market_weights = market_weights
         # Market implied returns
-        self.R              = (1+np.dot(np.dot(0.8, self.C), self.market_weights)+rf)**rebal_period-1
+        self.R              = (1+np.dot(np.dot(4, self.C), self.market_weights)+rf)**rebal_period-1
         # If no views are presented, realize the market portfolio
         self.mu_c           = self.R        
     
