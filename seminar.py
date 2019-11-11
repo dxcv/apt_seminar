@@ -59,6 +59,9 @@ bl2_return  = np.array([])
 # Initialize weight differences
 W_bl1_W_saa = []
 W_bl2_W_saa = []
+W_m_W_saa   = []
+W_gmv_W_saa = []
+
 
 # Define parameters for the BL models
 MeanModel1      = 'MLE'
@@ -129,10 +132,11 @@ for date in tdates:
 
     rf_return       = np.append(rf_return, rf)
 
-    # # Collect weight differences from TAA to SAA
-    # if date in wdates:
-    #     W_bl1_W_saa.append(W_bl1-W_saa)
-    #     W_bl2_W_saa.append(W_bl2-W_saa)
+    # Collect weight differences to SAA
+    if date in wdates:
+        W_bl1_W_saa.append(W_bl1-W_saa)
+        W_bl2_W_saa.append(W_bl2-W_saa)
+        W_
 
 
 #%%
@@ -149,9 +153,6 @@ ev_value    = np.cumprod(ev_value, axis=0)
 saa_value   = np.cumprod(saa_value, axis=0)
 bl1_value   = np.cumprod(bl1_value, axis=0)
 bl2_value   = np.cumprod(bl2_value, axis=0)
-
-
-# labels = ['MV', '1/N', 'gMinVar', 'SAA', 'TAA(BL '+Model1+')', ]
 
 tdates2   = [datetime.datetime.strptime(str(x)[0:8], '%Y%m%d') for x in tdates]
 plt.plot(tdates2, m_value, label='MV', color='green')
@@ -172,52 +173,72 @@ test1 = np.array(W_bl1_W_saa)
 
 plt.plot(test1)
 
-#%%
-all_returns = [m_return, gmv_return, ev_return, saa_return, bl1_return, bl2_return]
+#%% Summary risk statistics
+from scipy.stats import kurtosis, skew
+all_returns     = [m_return, gmv_return, ev_return, saa_return, bl1_return, bl2_return]
+all_values      = [m_value, gmv_value, ev_value, saa_value, bl1_value, bl2_value]
+geo_returns     = []
+std_devs        = []
+sharpe_ratios   = []
+kurtos          = []
+skews           = []
+valueatrisk     = []
+exp_shortfall   = []
 
 
-#%% Geometric Return
-all_values = [m_value, gmv_value, ev_value, saa_value, bl1_value, bl2_value]
 for i in all_values:
-    geometric_ret = (1+(i[-1]/i[0])**(1/len(i))-1)**12-1
-    print('gMean p.a.:'+str(geometric_ret))
- 
-#%% Standard Deviation
-for i in all_returns:
-    print('StDev p.a.: '+str(np.std(i)*np.sqrt(12)))
 
-#%% Value at Risk
-for i in all_returns:
-    print('1%-VaR: '+str(round(np.quantile(i, 0.01), ndigits=4)))
+    #%% Geometric Return
+    geo_i = round((1+(i[-1]/i[0])**(1/len(i))-1)**12-1, ndigits=4)
+    geo_returns.append(geo_i)
 
-# %% Expected Shortfall
+for i in all_returns: 
+    
+    #%% Standard Deviation
+    std_i = round((np.std(i)*np.sqrt(12)), ndigits=4)
+    std_devs.append(std_i)
 
-for i in all_returns:
+    #%% Value at Risk
+    var_i = round(np.quantile(i, 0.01), ndigits=4)
+    valueatrisk.append(var_i)
+
+    #%% Expected Shortfall
     vars = []
     for alpha in np.linspace(0.00001, 0.01):
         vars.append(round(np.quantile(i, alpha), ndigits=4))
-    es = np.mean(vars)
-    print('1%-'+'ES: '+str(np.round(es, 4)))
+    es_i = round(np.mean(vars), ndigits=4)
+    exp_shortfall.append(es_i)
 
-# %% Sharpe Ratio
-def ann_sr(rets, rfrets):
-    return ((1+np.mean(rets-rfrets))**12-1)/(np.std(rets)*np.sqrt(12))
+    # %% Sharpe Ratio
+    def ann_sr(rets, rfrets):
+        return ((1+np.mean(rets-rfrets))**12-1)/(np.std(rets)*np.sqrt(12))
 
-for i in all_returns:
-    print('SR p.a.: '+str(ann_sr(i, rf_return)))
+    sr_i = round(ann_sr(i, rf_return), ndigits=4)
+    sharpe_ratios.append(sr_i)
 
-#%% Kurtosis
-from scipy.stats import kurtosis, skew
-for i in all_returns:
-    print('Skewness: '+str(skew(i)))
+    #%% Kurtosis
+    kurtos.append(round(skew(i), ndigits=4))
 
-for i in all_returns:
-    print('Kurtosis: '+str(kurtosis(i)))
+    #%% Skewness
+    skews.append(round(kurtosis(i), ndigits=4))
+
 
 #%%
+labels = ['MaxSR-(0,1)', '1/N', 'gMinVar', 'SAA', 'TAA(BL '+MeanModel1+')', 'TAA(BL '+MeanModel2+')']
+
+summary_stats = pd.DataFrame(
+    {'gMean p.a.': geo_returns,
+     'StdDev p.a.': std_devs,
+     'SR p.a.': sharpe_ratios,
+     'Kurtosis': kurtos,
+     'Skewness': skews,
+     '1%-VaR': valueatrisk,
+     r'1%-ES': exp_shortfall}, index=labels)
+
+summary_stats.to_excel('Summary stats wit tau='+str(tau)+'+omega='+str(uncertainty)+'.xlsx')
 
 # %%
-height=W_bl2-W_saa
+height=W_m - W_ev
 bars = assets
 y_pos = np.arange(len(bars))
 plt.bar(y_pos, height)
@@ -225,4 +246,3 @@ plt.xticks(y_pos, bars, rotation='vertical')
 
 
 
-# %%
