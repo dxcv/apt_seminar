@@ -9,6 +9,7 @@ This is a repository for all the stuff I did during the UZH seminar Applied Port
 > `conda create --name apt python=3.6`
 5. Activate environment: 
 > `conda activate apt_sem`
-6. Download all the required modules for this project: 
+6. Clone this repository (see step 3): 
+7. Download all the required modules for this project: 
 > `pip install --user --requirement requirements.txt`
-7. Clone this repository (see step 3): 
+
